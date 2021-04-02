@@ -45,9 +45,18 @@ char **fetch(int pc) {
 
 void decode(char* ins){
     int opcode = 0;
+	int* machineCode = (int*) malloc(32*sizeof(int));
+	
     printf("Machine code ins: %s\n", ins);
+	
+	//Transfer User input char string into array of integers machineCode
+	for(int i = 0;i < 32; i++){
+		//since ASCII code for '0' is 48 and '1' is 49, use -48 to get the correct integer
+		*(machineCode+i) = *(ins+i) - 48;
+	}
+	
     for(int i = 0;i <= 5; i++){ //opcode 0-5 has 6 bits
-        opcode = opcode + (*(ins+i)*twoToPower(5-i));//element 0-5 correspond to 2^5...2^0
+        opcode = opcode + (*(machineCode+i)*twoToPower(5-i));//element 0-5 correspond to 2^5...2^0
     }
     
     //printf("Opcode: %d \n",opcode);
@@ -57,13 +66,13 @@ void decode(char* ins){
     //Otherwise, 1,4-62->I format
     
     if(opcode == 0){
-        call_R_format(ins, char_registers);
+        call_R_format(machineCode, char_registers);
     }
     else if(opcode == 2 || opcode == 3){
-        call_J_format(ins, opcode);
+        call_J_format(machineCode, opcode);
     }
     else{
-        call_I_format(ins, char_registers, opcode);
+        call_I_format(machineCode, char_registers, opcode);
     }
 }
 
@@ -255,6 +264,12 @@ int main(){
     
     for(int i = 0; i < 8; i++){
         decode(*(ins_memory + i));
+		/* Debug for what each instruction array stores decimal 48 as char 1
+		for(int j = 0; j < 32; j++){
+			printf("%s\n", *(*(ins_memory+i)+j));
+		}
+		printf("next");
+		*/
     }
     
     return 0;
