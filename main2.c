@@ -8,7 +8,10 @@ int next_pc = 0;
 char** ins_memory;
 
 //Global for Decode()
+//Register name
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
+//value that store inside the Registerfile
+int* registerfile = (int*) malloc(32*sizeof(int));
 
 
 char **fetch(int pc) {
@@ -228,6 +231,16 @@ void call_I_format(int* code, char** reg_arr, int opcode){
        }
        
     printf("Operation: %s \n",i_operation);
+	
+	if(i_operation == "lw" || i_operation == "sw"){
+		//16 is the leftmost bit of the immediate
+		if(*(code+16) == 1){
+			printf("Negative offset");
+		}
+		else{
+			printf("Positive offset");
+		}
+	}
     
     
     for(int i = 6;i <= 10; i++){ //rs 6-10 has 5 bits
@@ -257,6 +270,10 @@ void call_I_format(int* code, char** reg_arr, int opcode){
     printf("Immediate: %d\n",immediate);
     
    }
+
+
+//Not zero extension, sign_extension extend sign base on left most bit here
+//void sign_extension   
 
 
 int main(){
