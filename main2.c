@@ -354,7 +354,7 @@ void decode(char* ins, int* sign_extended){
         case "add":
             add = "0010";
         case "subtract":
-            sub = "0110";
+            subtract = "0110";
         case "or":
             or = "0001";
         case "and":
@@ -366,7 +366,7 @@ void decode(char* ins, int* sign_extended){
         case "beq":
             beq = "0110";   // subtract
         case "lw":
-            nor = "lw";   // add
+            lw = "0010";   // add
         case "sw":
             sw = "0010";  // add
             
