@@ -345,9 +345,37 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
 
 void decode(char* ins, int* sign_extended){
     int opcode = 0;
-    int* machineCode = (int*) malloc(32*sizeof(int));
-    
+    int* machineCode = (int*) malloc(32*sizeof(int));   
     printf("Machine code ins: %s\n", ins);
+    
+    
+    
+    /* switch(operation) {     // need to assign operation
+        case "add":
+            add = "0010";
+        case "subtract":
+            sub = "0110";
+        case "or":
+            or = "0001";
+        case "and":
+            and = "0000";
+        case "slt":
+            slt = "0111";
+        case "nor":
+            nor = "1100";
+        case "beq":
+            beq = "0110";   // subtract
+        case "lw":
+            nor = "lw";   // add
+        case "sw":
+            sw = "0010";  // add
+            
+    }
+    
+    */
+    
+    
+    
     
     //Transfer User input char string into array of integers machineCode
     for(int i = 0;i < 32; i++){
