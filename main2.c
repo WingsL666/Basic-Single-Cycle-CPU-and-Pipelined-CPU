@@ -274,14 +274,16 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
 		if(*(code+16) == 1){
 			printf("Negative offset\n");
 			sign_extension(*(code+16),code, sign_extended);
+			printf("Immediate: -%d\n",immediate);
 		}
 		else{
 			printf("Positive offset\n");
 			sign_extension(*(code+16),code, sign_extended);
+			printf("Immediate: %d\n",immediate);
 		}
 	}
     
-    printf("Immediate: %d\n",immediate);
+    //printf("Immediate: %d\n",immediate);
     
    }
 
