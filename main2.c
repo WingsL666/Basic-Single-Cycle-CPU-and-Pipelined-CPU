@@ -349,6 +349,28 @@ void decode(char* ins, int* sign_extended){
     printf("Machine code ins: %s\n", ins);
     
  
+    /* 
+    
+    if (operation == "add"){
+    add = 0010;
+  }
+else if  (operation == "subtract"){
+   subtract = 0110;
+  }
+else if  (operation == "or"){
+     or = 0001;
+  }
+  else if  (operation == "and"){
+     and = 0000;
+  }
+  else if  (operation == "slt"){
+    slt = 0111;
+  }
+  else if  (operation == "nor"){
+    nor = 1100;
+  }
+  */
+    
     
     //Transfer User input char string into array of integers machineCode
     for(int i = 0;i < 32; i++){
