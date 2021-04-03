@@ -15,8 +15,6 @@ char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", 
 
 
 char **fetch(int pc) {
-    
-    //FILE *fsize = fopen("sample_binary.txt","r");
     char ch;
     int count = 100;
     int local_pc = pc;
@@ -26,7 +24,7 @@ char **fetch(int pc) {
     
     FILE* f;
     
-    while ((f = fopen("sample_binary.txt", "r")) != NULL) {
+    while ((f = fopen("sample_binary_self_test.txt", "r")) != NULL) {
         index = local_pc/4; //index of instruction in the file
         
         fseek(f,index*34,SEEK_CUR); // take instruction at current pointer
@@ -46,6 +44,10 @@ char **fetch(int pc) {
     return ins_memory;
 }
 
+
+
+
+
 int twoToPower(int power){//implement a for loop for powering
     int result = 1;
     for(int i = 1;i <= power; i++){
@@ -53,6 +55,7 @@ int twoToPower(int power){//implement a for loop for powering
     }
     return result;
 }
+
 void printArr(int *a, int size){
     //printf("printArr: ");
     for(int i = 0 ; i < size;i++){
@@ -81,6 +84,45 @@ void sign_extension(int sign_bit, int* code, int* sign_extended){
         printArr(sign_extended, 32);
     }
 }
+
+int convertNegBinaryToDecimal(int* code){
+    int immediate = 0, counter_power = 0;
+    
+    //use 2's complement to convert imm binary to negative decimal
+    //Flip the 16 bits for imm and store it in flip_imm
+    int* flip_imm = (int*)malloc(16*sizeof(int));
+    for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
+        if(*(code+i) == 1){
+            //-16 to start at index 0 in flip_imm
+            *(flip_imm + i - 16) = 0;
+        }
+        else{
+            *(flip_imm + i - 16) = 1;
+        }
+                
+    }
+            
+    printf("After Flip 16 bits:");
+    printArr(flip_imm, 16);
+            
+    counter_power = 0;
+            
+    for(int i = 0;i <= 15; i++){ //imm 16-31 has 16 bits
+        immediate = immediate + (*(flip_imm+i)*twoToPower(15-counter_power));//TwoToPower(15-counter_power) gets 2^15...2^0
+        counter_power++;
+    }
+            
+    //add 1 to the flip bits for 2's complement
+    immediate += 1;
+            
+    //make the immediate negative
+    immediate *= -1;
+    
+    return immediate;
+}
+
+
+
 void call_R_format(int* code, char** reg_arr){
     printf("Instruction Type: R \n");
     
@@ -234,21 +276,24 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
     printf("Rs: %s", reg_arr[rs]);
     printf("(R%d)\n",rs);
     
-    
     counter_power = 0;
     for(int i = 11;i <= 15; i++){ //rt 11-15 has 5 bits
         rt = rt + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
     
+    
     printf("Rt: %s", reg_arr[rt]);
     printf("(R%d)\n",rs);
     
+    
+    //assume if immediate offet is positive
     counter_power = 0;
     for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
         immediate = immediate + (*(code+i)*twoToPower(15-counter_power));//TwoToPower(15-counter_power) gets 2^15...2^0
         counter_power++;
     }
+    //
     
     //strcmp(...,...) == 0 means the two string are the same
     if(strcmp(i_operation,"lw") == 0 || strcmp(i_operation,"sw") == 0){
@@ -259,18 +304,40 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
         if(*(code+16) == 1){
             printf("Negative offset\n");
             sign_extension(*(code+16),code, sign_extended);
-            printf("Immediate: -%d\n",immediate);
+            
+            //convertNegBinaryToDecimal using 2's complement
+            immediate = convertNegBinaryToDecimal(code);
+            
+            printf("Immediate: %d\n",immediate);
         }
         else{
             printf("Positive offset\n");
             sign_extension(*(code+16),code, sign_extended);
             printf("Immediate: %d\n",immediate);
         }
+        
+    }
+    else{
+        if(*(code+16) == 1){
+            printf("Negative offset\n");
+            
+            //convertNegBinaryToDecimal using 2's complement
+            immediate = convertNegBinaryToDecimal(code);
+            
+            printf("Immediate: %d\n",immediate);
+        }
+        else{
+            printf("Positive offset\n");
+            printf("Immediate: %d\n",immediate);
+        }
+        
     }
     
-    //printf("Immediate: %d\n",immediate);
     
    }
+
+
+
 
 
 
@@ -310,8 +377,23 @@ void decode(char* ins, int* sign_extended){
 }
 
 
-
 int main(){
+    
+    FILE *fp;
+      fp=fopen("sample_binary_self_test.txt", "r");
+      int lines =0 ;
+
+      while (EOF != (fscanf(fp, "%*[^\n]"), fscanf(fp,"%*c")))
+            ++lines;
+
+      printf("Total instructions in files : %i\n", lines);
+    if(fp != NULL){
+        fclose(fp); // close file
+    }
+    
+    
+    
+    
     //value that store inside the Registerfile
     int* registerfile = (int*) malloc(32*sizeof(int));
 
@@ -328,6 +410,7 @@ int main(){
         }
         printf("next");
         */
+        printf("\n");
     }
     
     return 0;
