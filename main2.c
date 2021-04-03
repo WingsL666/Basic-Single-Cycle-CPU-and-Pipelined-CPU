@@ -8,10 +8,10 @@ int next_pc = 0;
 char** ins_memory;
 
 //Global for Decode()
+
 //Register name
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
-//value that store inside the Registerfile
-int* registerfile = (int*) malloc(32*sizeof(int));
+
 
 
 char **fetch(int pc) {
@@ -46,7 +46,7 @@ char **fetch(int pc) {
     return ins_memory;
 }
 
-void decode(char* ins){
+void decode(char* ins, int* sign_extended){
     int opcode = 0;
 	int* machineCode = (int*) malloc(32*sizeof(int));
 	
@@ -75,8 +75,16 @@ void decode(char* ins){
         call_J_format(machineCode, opcode);
     }
     else{
-        call_I_format(machineCode, char_registers, opcode);
+        call_I_format(machineCode, char_registers, opcode, sign_extended);
     }
+}
+
+void printArr(int *a, int size){
+	//printf("printArr: "); 
+	for(int i = 0 ; i < size;i++){
+		printf("%d",*(a+i));
+	}
+	printf("\n");
 }
 
 
@@ -204,7 +212,7 @@ void call_J_format(int* code, int opcode){
 }
 
 
-void call_I_format(int* code, char** reg_arr, int opcode){
+void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
     printf("Instruction Type: I \n");
     
     int rs = 0, rt = 0, immediate = 0;
@@ -232,16 +240,6 @@ void call_I_format(int* code, char** reg_arr, int opcode){
        
     printf("Operation: %s \n",i_operation);
 	
-	if(i_operation == "lw" || i_operation == "sw"){
-		//16 is the leftmost bit of the immediate
-		if(*(code+16) == 1){
-			printf("Negative offset");
-		}
-		else{
-			printf("Positive offset");
-		}
-	}
-    
     
     for(int i = 6;i <= 10; i++){ //rs 6-10 has 5 bits
         rs = rs + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
@@ -266,6 +264,22 @@ void call_I_format(int* code, char** reg_arr, int opcode){
         immediate = immediate + (*(code+i)*twoToPower(15-counter_power));//TwoToPower(15-counter_power) gets 2^15...2^0
         counter_power++;
     }
+	
+	//strcmp(...,...) == 0 means the two string are the same
+	if(strcmp(i_operation,"lw") == 0 || strcmp(i_operation,"sw") == 0){
+		
+		printf("leftmost bit: %d\n", *(code+16));
+		
+		//16 is the leftmost bit of the immediate
+		if(*(code+16) == 1){
+			printf("Negative offset\n");
+			sign_extension(*(code+16),code, sign_extended);
+		}
+		else{
+			printf("Positive offset\n");
+			sign_extension(*(code+16),code, sign_extended);
+		}
+	}
     
     printf("Immediate: %d\n",immediate);
     
@@ -273,14 +287,38 @@ void call_I_format(int* code, char** reg_arr, int opcode){
 
 
 //Not zero extension, sign_extension extend sign base on left most bit here
-//void sign_extension   
+void sign_extension(int sign_bit, int* code, int* sign_extended){
+	for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
+        *(sign_extended+i) = *(code+i);
+    }
+	if(sign_bit == 1){
+		for(int i = 0;i <= 15; i++){ //imm 16-31 has 16 bits
+			*(sign_extended+i) = 1;
+		}
+		printf("Sign extended code:");
+		printArr(sign_extended, 32);
+	}
+	else{
+		for(int i = 0;i <= 15; i++){ //imm 16-31 has 16 bits
+			*(sign_extended+i) = 0;
+		}
+		printf("Sign extended code:");
+		printArr(sign_extended, 32);
+	}
+}	
 
 
 int main(){
+	//value that store inside the Registerfile
+	int* registerfile = (int*) malloc(32*sizeof(int));
+
+	//array to store sign-extended offet
+	int* sign_extended = (int*) malloc(32*sizeof(int));
+	
     ins_memory = fetch(pc);
     
     for(int i = 0; i < 8; i++){
-        decode(*(ins_memory + i));
+        decode(*(ins_memory + i), sign_extended);
 		/* Debug for what each instruction array stores decimal 48 as char 1
 		for(int j = 0; j < 32; j++){
 			printf("%s\n", *(*(ins_memory+i)+j));
