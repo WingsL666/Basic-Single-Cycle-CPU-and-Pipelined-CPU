@@ -156,6 +156,17 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode()
         function = function + (*(code+i)*twoToPower(5-counter_power));//TwoToPower(5-counter_power) gets 2^5...2^0
         counter_power++;
     }
+	
+	//set control unit signals
+	jump = 0;
+    RegDst = 1;
+    ALUSrc = 0;
+    MemtoReg = 0;
+    RegWrite = 1;
+    MemRead = 0;
+    MemWrite = 0;
+    branch = 0;
+    InstType = 10;
     
     switch(function)
     {
@@ -241,10 +252,11 @@ void call_J_format(int* code, int opcode){ //Use in Decode()
     {
         case 2:
             j_operation = "j";
-            break;
-            
-        case 3:
-            j_operation = "jal";
+			jump = 1;
+			RegWrite = 0;
+			MemRead = 0;
+			MemWrite = 0;
+			branch = 0;
             break;
     }
     
@@ -284,16 +296,39 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
             
         case 4:   // beq
             i_operation = "beq";
+			jump = 0;
+			ALUSrc = 0;
+			RegWrite = 0;
+			MemRead = 0;
+			MemWrite = 1;
+			branch = 1;
+			InstType = 01;
             break;
             
             
         case 35:  // lw
             i_operation = "lw";
+			jump = 0;
+			RegDst = 0;
+			ALUSrc = 1;
+			MemtoReg = 1;
+			RegWrite = 1;
+			MemRead = 1;
+			MemWrite = 0;
+			branch = 0;
+			InstType = 0;
             break;
             
             
         case 43: //sw
             i_operation = "sw";
+			jump = 0;
+			ALUSrc = 1;
+			RegWrite = 0;
+			MemRead = 0;
+			MemWrite = 1;
+			branch = 0;
+			InstType = 0;
             break;
             
     }
