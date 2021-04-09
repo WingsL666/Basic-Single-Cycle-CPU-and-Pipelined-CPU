@@ -9,6 +9,15 @@ int next_pc = 0;
 char** ins_memory;
 
 //Global for Decode()
+int jump;
+int RegDst;
+int ALUSrc;
+int MemtoReg;
+int RegWrite;
+int MemRead;
+int MemWrite;
+int branch;
+int InstType;
 
 //Register name
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
@@ -74,22 +83,22 @@ int convertNegBinaryToDecimal(int* code){
         else{
             *(flip_imm + i - 16) = 1;
         }
-                
+        
     }
-            
+    
     printf("After Flip 16 bits:");
     printArr(flip_imm, 16);
-            
+    
     counter_power = 0;
-            
+    
     for(int i = 0;i <= 15; i++){ //imm 16-31 has 16 bits
         immediate = immediate + (*(flip_imm+i)*twoToPower(15-counter_power));//TwoToPower(15-counter_power) gets 2^15...2^0
         counter_power++;
     }
-            
+    
     //add 1 to the flip bits for 2's complement
     immediate += 1;
-            
+    
     //make the immediate negative
     immediate *= -1;
     
@@ -116,11 +125,11 @@ void call_R_format(int* code, char** reg_arr){
         case 32:   // Add
             r_operation = "add";
             break;
- 
+            
         case 34:  // Sub
             r_operation = "sub";
             break;
-
+            
         case 36:  // and
             r_operation = "and";
             break;
@@ -128,15 +137,15 @@ void call_R_format(int* code, char** reg_arr){
         case 37: // or
             r_operation = "or";
             break;
-        
+            
         case 39: // nor
             r_operation = "nor";
             break;
-           
+            
         case 42:  // slt
             r_operation = "slt";
             break;
-        
+            
     }
     
     printf("Operation: %s \n",r_operation);
@@ -193,13 +202,13 @@ void call_J_format(int* code, int opcode){
     
     switch(opcode)
     {
-       case 2:
-           j_operation = "j";
-           break;
-           
-       case 3:
-           j_operation = "jal";
-           break;
+        case 2:
+            j_operation = "j";
+            break;
+            
+        case 3:
+            j_operation = "jal";
+            break;
     }
     
     printf("Operation: %s \n",j_operation);
@@ -223,23 +232,23 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
     
     switch(opcode)
     {
-
-     case 4:   // beq
-         i_operation = "beq";
-         break;
-         
             
-         case 35:  // lw
-         i_operation = "lw";
-         break;
- 
- 
+        case 4:   // beq
+            i_operation = "beq";
+            break;
+            
+            
+        case 35:  // lw
+            i_operation = "lw";
+            break;
+            
+            
         case 43: //sw
-         i_operation = "sw";
-         break;
- 
-       }
-       
+            i_operation = "sw";
+            break;
+            
+    }
+    
     printf("Operation: %s \n",i_operation);
     
     
@@ -309,7 +318,7 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
     }
     
     
-   }
+}
 
 
 
@@ -320,32 +329,96 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
 
 void decode(char* ins, int* sign_extended){
     int opcode = 0;
-    int* machineCode = (int*) malloc(32*sizeof(int));   
+    int* machineCode = (int*) malloc(32*sizeof(int));
     printf("Machine code ins: %s\n", ins);
     
- 
-    /* 
     
-    if (operation == "add"){
-    add = 0010;
-  }
-else if  (operation == "subtract"){
-   subtract = 0110;
-  }
-else if  (operation == "or"){
+    /*
+     
+     if (operation == "add"){
+     add = 0010;
+     }
+     else if  (operation == "subtract"){
+     subtract = 0110;
+     }
+     else if  (operation == "or"){
      or = 0001;
-  }
-  else if  (operation == "and"){
+     }
+     else if  (operation == "and"){
      and = 0000;
-  }
-  else if  (operation == "slt"){
-    slt = 0111;
-  }
-  else if  (operation == "nor"){
-    nor = 1100;
-  }
-  */
+     }
+     else if  (operation == "slt"){
+     slt = 0111;
+     }
+     else if  (operation == "nor"){
+     nor = 1100;
+     }
+     */
     
+    /*
+     if (inst = Rtype) {
+        jump = 0;
+        RegDst = 1;
+        ALUSrc = 0;
+        MemtoReg = 0;
+        RegWrite = 1;
+        MemRead = 0;
+        MemWrite = 0;
+        branch = 0;
+        InstType = 10;
+    }
+     else if ( inst = lw)
+        {
+        jump = 0;
+        RegDst = 0;
+        ALUSrc = 1;
+        MemtoReg = 1;
+        RegWrite = 1;
+        MemRead = 1;
+        MemWrite = 0;
+        branch = 0;
+        InstType = 0;
+        }
+    else if ( inst = sw)
+        {
+        jump = 0;
+        ALUSrc = 1;
+        RegWrite = 0;
+        MemRead = 0;
+        MemWrite = 1;
+        branch = 0;
+        InstType = 0;
+        }
+     else if ( inst = beq)
+        {
+        jump = 0;
+        ALUSrc = 0;
+        RegWrite = 0;
+        MemRead = 0;
+        MemWrite = 1;
+        branch = 1;
+        InstType = 01;
+        }
+    else if ( inst = beq)
+        {
+        jump = 0;
+        ALUSrc = 0;
+        RegWrite = 0;
+        MemRead = 0;
+        MemWrite = 1;
+        branch = 1;
+        InstType = 01;
+        }
+    else if ( inst = jump)
+        {
+        jump = 1;
+        RegWrite = 0;
+        MemRead = 0;
+        MemWrite = 0;
+        branch = 0;
+        }
+    }
+     */
     
     //Transfer User input char string into array of integers machineCode
     for(int i = 0;i < 32; i++){
@@ -377,25 +450,25 @@ else if  (operation == "or"){
 
 
 int main(){
-	int ins_index = 0;
-	int totalNumofIns = 0;
+    int ins_index = 0;
+    int totalNumofIns = 0;
     
-	//Note!!!!!!!!process below is very sensitive about number of \n within the txt file
-	//get the total number of instruction to create instruction cache array:
-	
+    //Note!!!!!!!!process below is very sensitive about number of \n within the txt file
+    //get the total number of instruction to create instruction cache array:
+    
     FILE *fp;
     char ch;
     
     //open file in read more
     fp=fopen(FILENAME,"r");
     if(fp==NULL) {
-      printf("File \"%s\" does not exist!!!\n",FILENAME);
-      return -1;
+        printf("File \"%s\" does not exist!!!\n",FILENAME);
+        return -1;
     }
     //read character by character and check for new line
     while((ch=fgetc(fp))!=EOF) {
-      if(ch=='\n')
-         totalNumofIns++;
+        if(ch=='\n')
+            totalNumofIns++;
     }
     //close the file
     if(fp != NULL){
@@ -403,25 +476,25 @@ int main(){
     }
     //print number of lines
     printf("Total number of lines are: %d\n",totalNumofIns);
-   
-	
-	//create instruction cache array:
-	char** ins_memory= (char**)malloc(totalNumofIns*sizeof(char*)); // allocating size for ins_memory
-	
+    
+    
+    //create instruction cache array:
+    char** ins_memory= (char**)malloc(totalNumofIns*sizeof(char*)); // allocating size for ins_memory
+    
     FILE* f;
     
     while ((f = fopen(FILENAME, "r")) != NULL) {
         
         fseek(f,ins_index*34,SEEK_CUR); // take instruction at current pointer
         char *ins = (char*)malloc(34*sizeof(char));
-		
+        
         if(fgets(ins,34,f)!=NULL){
             ins_memory[ins_index] = (char*)malloc(34);
             strcpy(ins_memory[ins_index],ins); //store new ins into array
             //printf("Current inst: %s\n",ins_memory[ins_index]);
-			ins_index++;
+            ins_index++;
         }
-		
+        
     }
     if(f != NULL){
         fclose(f); // close file
@@ -432,7 +505,7 @@ int main(){
     
     //value that store inside the Registerfile
     int* registerfile = (int*) malloc(32*sizeof(int));
-
+    
     //array to store sign-extended offet
     int* sign_extended = (int*) malloc(32*sizeof(int));
     
@@ -441,11 +514,11 @@ int main(){
     for(int i = 0; i < totalNumofIns; i++){
         decode(*(ins_memory + i), sign_extended);
         /* Debug for what each instruction array stores decimal 48 as char 1
-        for(int j = 0; j < 32; j++){
-            printf("%s\n", *(*(ins_memory+i)+j));
-        }
-        printf("next");
-        */
+         for(int j = 0; j < 32; j++){
+         printf("%s\n", *(*(ins_memory+i)+j));
+         }
+         printf("next");
+         */
         printf("\n");
     }
     
