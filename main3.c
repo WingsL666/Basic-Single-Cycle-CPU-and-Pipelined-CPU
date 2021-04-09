@@ -9,6 +9,8 @@ int next_pc = 0;
 char** ins_memory;
 
 //Global for Decode()
+int jump_target = 0;
+
 int jump;
 int RegDst;
 int ALUSrc;
@@ -113,6 +115,9 @@ int convertNegBinaryToDecimal(int* code){
     
     return immediate;
 }
+
+
+
 
 
 
@@ -228,6 +233,10 @@ void call_J_format(int* code, int opcode){
         counter_power++;
     }
     printf("Jump address: %d \n",target_address);
+	
+	
+	//target_address to shift-left-2
+	jump_target = target_address*4;
     
 }
 
