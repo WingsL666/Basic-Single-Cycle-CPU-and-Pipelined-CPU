@@ -454,7 +454,7 @@ void decode(char* ins, int* sign_extended){
       alu_result = rs | rt;
       }
       if (op == slt){
-      alu_result = (rs - rt) < 0; // not sure about this one
+      alu_result = (rs - rt) < 0; // not sure about this one.
       }
       if (op == nor){
       alu_result = ~(rs | rt);
