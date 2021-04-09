@@ -438,7 +438,7 @@ int main(){
     
     //ins_memory = fetch(pc);
     
-    for(int i = 0; i < 8; i++){
+    for(int i = 0; i < totalNumofIns; i++){
         decode(*(ins_memory + i), sign_extended);
         /* Debug for what each instruction array stores decimal 48 as char 1
         for(int j = 0; j < 32; j++){
