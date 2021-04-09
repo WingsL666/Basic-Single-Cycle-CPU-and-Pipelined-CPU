@@ -35,7 +35,7 @@ void fetch(char** ins_memory) {
 
 
 
-int twoToPower(int power){//implement a for loop for powering
+int twoToPower(int power){//implement a for loop for powering, Use in call_?_format()
     int result = 1;
     for(int i = 1;i <= power; i++){
         result *= 2;
@@ -43,7 +43,7 @@ int twoToPower(int power){//implement a for loop for powering
     return result;
 }
 
-void printArr(int *a, int size){
+void printArr(int *a, int size){ //print 2D array
     //printf("printArr: ");
     for(int i = 0 ; i < size;i++){
         printf("%d",*(a+i));
@@ -51,7 +51,7 @@ void printArr(int *a, int size){
     printf("\n");
 }
 
-void printArrWithSpace(int *a, int size){
+void printArrWithSpace(int *a, int size){ //print 2D array with space between each element
     //printf("printArr: ");
     for(int i = 0 ; i < size;i++){
         printf("%d ",*(a+i));
@@ -60,7 +60,7 @@ void printArrWithSpace(int *a, int size){
 }
 
 //Not zero extension, sign_extension extend sign base on left most bit here
-void sign_extension(int sign_bit, int* code, int* sign_extended){
+void sign_extension(int sign_bit, int* code, int* sign_extended){ //Use in Decode()
     for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
         *(sign_extended+i) = *(code+i);
     }
@@ -80,7 +80,7 @@ void sign_extension(int sign_bit, int* code, int* sign_extended){
     }
 }
 
-int convertNegBinaryToDecimal(int* code){
+int convertNegBinaryToDecimal(int* code){ //Use in Decode()
     int immediate = 0, counter_power = 0;
     
     //use 2's complement to convert imm binary to negative decimal
@@ -117,11 +117,34 @@ int convertNegBinaryToDecimal(int* code){
 }
 
 
+//Use in Decode()->call_J_format for jump_target
+//but also can be use in anywhere in program
+int* convertDecimalto32bitBinary(int deciaml){ 
+	int* arr = (int*) malloc(32*sizeof(int));
+	int n = deciaml;
+	for(int i = 0;n > 0;i++){    
+		arr[i] = n % 2;    
+		n = n/2;    
+	}    
+	printf("Convert %d to binary:",pc);
+	printArr(arr,32);
+	
+	return arr;
+}
 
 
 
+int getFirst4bitReturnAsDecimal(int* binary32){ //get the first 4 bits in pc and convert it to decimal
+	int dec = 0, counter_power = 0;
+	for(int i = 0; i < 4;i++){    
+		dec = dec + (*(binary32+i)*twoToPower(31-i));//TwoToPower(31-counter_power) gets 2^31...2^28
+	}
+	return dec;
+}
 
-void call_R_format(int* code, char** reg_arr){
+
+
+void call_R_format(int* code, char** reg_arr){ //Use in Decode()
     printf("Instruction Type: R \n");
     
     int rs = 0,rt = 0,rd = 0, shamt = 0, function = 0;
@@ -129,7 +152,7 @@ void call_R_format(int* code, char** reg_arr){
     char *r_operation;
     
     //move func in front to update to correct operation and print func code at the last
-    for(int i = 26;i <= 31; i++){ //func 26-31 has 5 bits
+    for(int i = 26;i <= 31; i++){ //func 26-31 has 6 bits
         function = function + (*(code+i)*twoToPower(5-counter_power));//TwoToPower(5-counter_power) gets 2^5...2^0
         counter_power++;
     }
@@ -207,7 +230,7 @@ void call_R_format(int* code, char** reg_arr){
     
 }
 
-void call_J_format(int* code, int opcode){
+void call_J_format(int* code, int opcode){ //Use in Decode()
     printf("Instruction Type: J \n");
     
     int target_address = 0;
@@ -235,13 +258,21 @@ void call_J_format(int* code, int opcode){
     printf("Jump address: %d \n",target_address);
 	
 	
-	//target_address to shift-left-2
+	//First shift-left-2 and then merge first 4 bits from pc to get target_address
 	jump_target = target_address*4;
+	
+	int* pc_binary = (int*) malloc(32*sizeof(int));
+	pc_binary = convertDecimalto32bitBinary(pc);
+	
+	int merge4 = getFirst4bitReturnAsDecimal(pc_binary);
+	printf("merge4:%d\n",merge4);
+	
+	jump_target += merge4;
     
 }
 
 
-void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
+void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ //Use in Decode()
     printf("Instruction Type: I \n");
     
     int rs = 0, rt = 0, immediate = 0;
@@ -531,6 +562,16 @@ int main(){
 	
     //array to store sign-extended offet
     int* sign_extended = (int*) malloc(32*sizeof(int));
+	
+	
+	//test convertDecimalto32bitBinary() and getFirst4bitReturnAsDecimal() for getting jump_target
+	/*
+	int* pc_binary = (int*) malloc(32*sizeof(int));
+	pc_binary = convertDecimalto32bitBinary(5800);
+	
+	int merge4 = getFirst4bitReturnAsDecimal(pc_binary);
+	printf("merge4:%d\n",merge4);
+	*/
     
     
     
