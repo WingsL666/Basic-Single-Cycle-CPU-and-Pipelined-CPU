@@ -417,7 +417,7 @@ void decode(char* ins, int* sign_extended){
     printf("Machine code ins: %s\n", ins);
     
     
-    /*
+    /*    Setting alu_op values
      
      if (operation == "add"){
      add = 0010;
@@ -438,6 +438,33 @@ void decode(char* ins, int* sign_extended){
      nor = 1100;
      }
      */
+	
+	/*  Running ALU operations
+	
+	if (op == add){
+      alu_result = rs + rt;
+      }
+      if (op == subtract){
+      alu_result = rs - rt;
+      }
+      if (op == and){
+      alu_result = rs & rt;
+      }
+      if (op == or){
+      alu_result = rs | rt;
+      }
+      if (op == slt){
+      alu_result = (rs - rt) < 0; // not sure about this one
+      }
+      if (op == nor){
+      alu_result = ~(rs | rt);
+      }
+      */
+	
+	
+	
+	
+	
     
     /*
      if (inst = Rtype) {
@@ -503,6 +530,8 @@ void decode(char* ins, int* sign_extended){
         }
     }
      */
+	
+	
     
     //Transfer User input char string into array of integers machineCode
     for(int i = 0;i < 32; i++){
