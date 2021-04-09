@@ -300,7 +300,7 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 			ALUSrc = 0;
 			RegWrite = 0;
 			MemRead = 0;
-			MemWrite = 1;
+			MemWrite = 0;
 			branch = 1;
 			InstType = 01;
             break;
