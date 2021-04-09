@@ -24,8 +24,9 @@ char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", 
 
 
 
-void fetch(int pc) {
-    int local_pc = pc;
+void fetch(char** ins_memory) {
+	int updated_pc;
+    next_pc = pc + 4;
 }
 
 
@@ -44,6 +45,14 @@ void printArr(int *a, int size){
     //printf("printArr: ");
     for(int i = 0 ; i < size;i++){
         printf("%d",*(a+i));
+    }
+    printf("\n");
+}
+
+void printArrWithSpace(int *a, int size){
+    //printf("printArr: ");
+    for(int i = 0 ; i < size;i++){
+        printf("%d ",*(a+i));
     }
     printf("\n");
 }
@@ -268,7 +277,7 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){
     
     
     printf("Rt: %s", reg_arr[rt]);
-    printf("(R%d)\n",rs);
+    printf("(R%d)\n",rt);
     
     
     //assume if immediate offet is positive
@@ -449,6 +458,7 @@ void decode(char* ins, int* sign_extended){
 
 
 
+
 int main(){
     int ins_index = 0;
     int totalNumofIns = 0;
@@ -502,14 +512,18 @@ int main(){
     
     
     
-    
     //value that store inside the Registerfile
     int* registerfile = (int*) malloc(32*sizeof(int));
+	for(int i = 0; i < 32; i++){
+		*(registerfile+i) = 0;
+	}		
+	printArrWithSpace(registerfile,32);
     
+	
     //array to store sign-extended offet
     int* sign_extended = (int*) malloc(32*sizeof(int));
     
-    //ins_memory = fetch(pc);
+    
     
     for(int i = 0; i < totalNumofIns; i++){
         decode(*(ins_memory + i), sign_extended);
