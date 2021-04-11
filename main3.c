@@ -21,8 +21,14 @@ int MemWrite;
 int branch;
 int InstType;
 
+int alu_op;
+
+//Global for Execute()
+int alu-zero = 0;
+
 //Register name
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
+
 
 
 
@@ -144,7 +150,7 @@ int getFirst4bitReturnAsDecimal(int* binary32){ //get the first 4 bits in pc and
 
 
 
-void call_R_format(int* code, char** reg_arr){ //Use in Decode()
+void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine ControlUnit()
     printf("Instruction Type: R \n");
     
     int rs = 0,rt = 0,rd = 0, shamt = 0, function = 0;
@@ -167,31 +173,38 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode()
     MemWrite = 0;
     branch = 0;
     InstType = 10;
+	
     
     switch(function)
     {
         case 32:   // Add
             r_operation = "add";
+			alu_op = 0010;
             break;
             
         case 34:  // Sub
             r_operation = "sub";
+			alu_op = 0110;
             break;
             
         case 36:  // and
             r_operation = "and";
+			alu_op = 0000;
             break;
             
         case 37: // or
             r_operation = "or";
+			alu_op = 0001;
             break;
             
         case 39: // nor
             r_operation = "nor";
+			alu_op = 1100;
             break;
             
         case 42:  // slt
             r_operation = "slt";
+			alu_op = 0111;
             break;
             
     }
@@ -241,7 +254,7 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode()
     
 }
 
-void call_J_format(int* code, int opcode){ //Use in Decode()
+void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit()
     printf("Instruction Type: J \n");
     
     int target_address = 0;
@@ -284,7 +297,7 @@ void call_J_format(int* code, int opcode){ //Use in Decode()
 }
 
 
-void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ //Use in Decode()
+void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ //Use in Decode(), combine ControlUnit()
     printf("Instruction Type: I \n");
     
     int rs = 0, rt = 0, immediate = 0;
@@ -303,6 +316,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 			MemWrite = 0;
 			branch = 1;
 			InstType = 01;
+			
+			alu_op = 0110;
             break;
             
             
@@ -317,6 +332,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 			MemWrite = 0;
 			branch = 0;
 			InstType = 0;
+			
+			alu_op = 0010;
             break;
             
             
@@ -329,6 +346,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 			MemWrite = 1;
 			branch = 0;
 			InstType = 0;
+			
+			alu_op = 0010;
             break;
             
     }
@@ -407,37 +426,11 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 
 
 
-
-
-
-
-void decode(char* ins, int* sign_extended){
+void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in decode()
     int opcode = 0;
     int* machineCode = (int*) malloc(32*sizeof(int));
     printf("Machine code ins: %s\n", ins);
     
-    
-    /*    Setting alu_op values
-     
-     if (operation == "add"){
-     add = 0010;
-     }
-     else if  (operation == "subtract"){
-     subtract = 0110;
-     }
-     else if  (operation == "or"){
-     or = 0001;
-     }
-     else if  (operation == "and"){
-     and = 0000;
-     }
-     else if  (operation == "slt"){
-     slt = 0111;
-     }
-     else if  (operation == "nor"){
-     nor = 1100;
-     }
-     */
 	
 	/*  Running ALU operations
 	
@@ -460,77 +453,6 @@ void decode(char* ins, int* sign_extended){
       alu_result = ~(rs | rt);
       }
       */
-	
-	
-	
-	
-	
-    
-    /*
-     if (inst = Rtype) {
-        jump = 0;
-        RegDst = 1;
-        ALUSrc = 0;
-        MemtoReg = 0;
-        RegWrite = 1;
-        MemRead = 0;
-        MemWrite = 0;
-        branch = 0;
-        InstType = 10;
-    }
-     else if ( inst = lw)
-        {
-        jump = 0;
-        RegDst = 0;
-        ALUSrc = 1;
-        MemtoReg = 1;
-        RegWrite = 1;
-        MemRead = 1;
-        MemWrite = 0;
-        branch = 0;
-        InstType = 0;
-        }
-    else if ( inst = sw)
-        {
-        jump = 0;
-        ALUSrc = 1;
-        RegWrite = 0;
-        MemRead = 0;
-        MemWrite = 1;
-        branch = 0;
-        InstType = 0;
-        }
-     else if ( inst = beq)
-        {
-        jump = 0;
-        ALUSrc = 0;
-        RegWrite = 0;
-        MemRead = 0;
-        MemWrite = 1;
-        branch = 1;
-        InstType = 01;
-        }
-    else if ( inst = beq)
-        {
-        jump = 0;
-        ALUSrc = 0;
-        RegWrite = 0;
-        MemRead = 0;
-        MemWrite = 1;
-        branch = 1;
-        InstType = 01;
-        }
-    else if ( inst = jump)
-        {
-        jump = 1;
-        RegWrite = 0;
-        MemRead = 0;
-        MemWrite = 0;
-        branch = 0;
-        }
-    }
-     */
-	
 	
     
     //Transfer User input char string into array of integers machineCode
@@ -636,6 +558,9 @@ int main(){
 	int merge4 = getFirst4bitReturnAsDecimal(pc_binary);
 	printf("merge4:%d\n",merge4);
 	*/
+	
+	//Test to print InstType
+	//printf("%d\n", 01); // 01 will be printed as 1
     
     
     
