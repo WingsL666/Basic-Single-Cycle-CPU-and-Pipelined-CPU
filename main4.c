@@ -14,6 +14,7 @@ int jump_target = 0;
 int registerfile_rs_index, registerfile_rt_index, registerfile_rd_index;
 int global_immediate; //int global_shamt;
 
+
 int jump;
 int RegDst;
 int ALUSrc;
@@ -29,9 +30,17 @@ int alu_op;
 //Global for Execute()
 int alu_zero = 0;
 int branch_target;
+int global_rd_value;
+int d_mem_entry_address = 0; 
+
+//Global for mem()
+int d_mem_entry_value; //store the data memory value get from lw
 
 //Register name
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
+
+//Clock cycle in WB()
+int total_clock_cycles = 0; 
 
 
 
@@ -356,6 +365,7 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 			branch = 0;
 			InstType = 0;
 			
+			
 			alu_op = 0010;
             break;
             
@@ -536,13 +546,15 @@ void execute(int* registerfile){
 				
 		}
 		
+		global_rd_value = rd_value; //store this to global for write back later
+		
 	}
 	else if(InstType == 0){ // lw or sw
 	
 		switch(alu_op)
 		{
 			case 0010:   // Add
-				rt_value = rs_value + global_immediate;
+				d_mem_entry_address = rs_value + global_immediate; //store the data entry address to global
 				break;	
 		}
 		
@@ -572,14 +584,73 @@ void execute(int* registerfile){
 
 
 
+void mem(int* data_memory, int* registerfile){
+			
+	if(InstType == 0){ // lw or sw
+		switch(MemWrite)
+		{
+			case 0:  // lw
+				d_mem_entry_value = data_memory[d_mem_entry_address]; //load the memory to global var
+				break;
+			
+			case 1:  // sw	
+				data_memory[d_mem_entry_address] = registerfile[registerfile_rt_index]; //store value in rt to data memory
+				break;
+		}
+	}
+	
+	
+}
+
+
+void writeBack(int* registerfile){
+	
+	if(RegWrite == 1){ //write to register is true
+		switch(InstType)
+		{
+			case 10:   // R type
+				registerfile[registerfile_rd_index] = global_rd_value; // write back to rd
+				break;	
+				
+			case 0: // lw
+				registerfile[registerfile_rt_index] = d_mem_entry_value;
+				break;
+				
+		}
+	}
+	
+}
+
+
+
+
 
 int main(){
     int ins_index = 0;
     int totalNumofIns = 0;
+	
+	//value that store inside the Registerfile
+    int* registerfile = (int*) malloc(32*sizeof(int));
+	for(int i = 0; i < 32; i++){
+		*(registerfile+i) = 0;
+	}		
+	printArrWithSpace(registerfile,32);
+	
+	
+	//initialize data memory
+    int* data_memory = (int*) malloc(32*sizeof(int));
+	for(int i = 0; i < 32; i++){
+		*(data_memory+i) = 0;
+	}		
+	printArrWithSpace(data_memory,32);
+    
+	
+    //array to store sign-extended offet
+    int* sign_extended = (int*) malloc(32*sizeof(int));
+	
     
     //Note!!!!!!!!process below is very sensitive about number of \n within the txt file
     //get the total number of instruction to create instruction cache array:
-    
     FILE *fp;
     char ch;
     
@@ -605,6 +676,8 @@ int main(){
     //create instruction cache array:
     char** ins_memory= (char**)malloc(totalNumofIns*sizeof(char*)); // allocating size for ins_memory
     
+	
+	//initialze instruction memory:
     FILE* f;
     
     while ((f = fopen(FILENAME, "r")) != NULL) {
@@ -624,18 +697,6 @@ int main(){
         fclose(f); // close file
     }
     
-    
-    
-    //value that store inside the Registerfile
-    int* registerfile = (int*) malloc(32*sizeof(int));
-	for(int i = 0; i < 32; i++){
-		*(registerfile+i) = 0;
-	}		
-	printArrWithSpace(registerfile,32);
-    
-	
-    //array to store sign-extended offet
-    int* sign_extended = (int*) malloc(32*sizeof(int));
 	
 	
 	//test convertDecimalto32bitBinary() and getFirst4bitReturnAsDecimal() for getting jump_target
@@ -664,6 +725,12 @@ int main(){
     }
 	
 	execute(registerfile);
+	
+	mem(data_memory, registerfile);
+	
+	writeBack(registerfile);
+	
+	
     
     return 0;
 }
