@@ -1,0 +1,65 @@
+Total number of lines are: 7  // should be 8
+--------------------------------------------
+total_clock_cycles 1 :
+pc is modified to 0 
+Machine code ins: 10001110000010110000000000000100
+Instruction Type: I 
+Operation: lw 
+Rs: s0(R16)
+Rt: t3(R11)
+leftmost bit: 0
+Positive offset
+Sign extended code:00000000000000000000000000000100
+Immediate: 4
+t3 is modified to 0 
+--------------------------------------------
+total_clock_cycles 2 :
+pc is modified to 4 
+Machine code ins: 00000001001010100110100000100010
+Instruction Type: R 
+Operation: sub 
+Rs: t1(R9)
+Rt: t2(R10)
+Rd: t5(R13)
+Shamt: 0 
+Funct: 34 
+t5 is modified to 27 
+--------------------------------------------------
+total_clock_cycles 3 :
+pc is modified to 8 
+Machine code ins: 00000001101010111000100000101010
+Instruction Type: R 
+Operation: slt 
+Rs: t5(R13)
+Rt: t3(R11)
+Rd: s1(R17)
+Shamt: 0 
+Funct: 42 
+s1 is modified to 0 
+------------------------------------------------
+total_clock_cycles 4 :
+pc is modified to 12 
+Machine code ins: 00010010001000000000000000000011
+Instruction Type: I 
+Operation: beq 
+Rs: s1(R17)
+Rt: zero(R0)
+Positive offset
+Immediate: 3
+-------------------------------------------
+total_clock_cycles 5 :
+pc is modified to 28 
+Machine code ins: 10101110000011010000000000000000
+Instruction Type: I 
+Operation: sw 
+Rs: s0(R16)
+Rt: t5(R13)
+leftmost bit: 0
+Positive offset
+Sign extended code:00000000000000000000000000000000
+Immediate: 0
+memory 32722 is modified to 27
+----------------------------------------------
+total_clock_cycles 6 :   // program should be terminated by this point?
+pc is modified to 32 
+Segmentation fault: 11
