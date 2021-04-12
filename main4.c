@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-#define FILENAME "sample_binary_self_test.txt"
+#define FILENAME "sample_binary.txt"
 
 //Global for Fetch()
 int pc = 0;
@@ -14,15 +14,15 @@ int jump_target = 0;
 int registerfile_rs_index, registerfile_rt_index, registerfile_rd_index;
 int global_immediate; //int global_shamt;
 
-
-int jump;
+   //9 control signals
+int jump = 0;
 int RegDst;
 int ALUSrc;
 int MemtoReg;
 int RegWrite;
 int MemRead;
 int MemWrite;
-int branch;
+int branch = 0;
 int InstType;
 
 int alu_op;
@@ -40,17 +40,35 @@ int d_mem_entry_value; //store the data memory value get from lw
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
 
 //Clock cycle in WB()
-int total_clock_cycles = 0; 
+int total_clock_cycles = 1; 
 
 
 
 
-void fetch(char** ins_memory) {
-	int updated_pc;
+char* fetch(char** ins_memory) {
+	char* instruction;
+	
+	if(jump == 1){ //get the signal left from the last instruction
+		pc = jump_target;
+	}
+	else if(branch == 1){
+		pc = branch_target;
+	}
+	else{
+		pc = next_pc;
+	}
+	
+	printf("pc is modified to %d \n", pc);
+	
+	int ins_index = pc / 4;
+	
+	instruction = ins_memory[ins_index];
+	
+	//increment pc
     next_pc = pc + 4;
+	
+	return instruction;
 }
-
-
 
 
 
@@ -595,6 +613,7 @@ void mem(int* data_memory, int* registerfile){
 			
 			case 1:  // sw	
 				data_memory[d_mem_entry_address] = registerfile[registerfile_rt_index]; //store value in rt to data memory
+				printf("memory %d is modified to %d\n", d_mem_entry_address, data_memory[d_mem_entry_address]);
 				break;
 		}
 	}
@@ -610,14 +629,18 @@ void writeBack(int* registerfile){
 		{
 			case 10:   // R type
 				registerfile[registerfile_rd_index] = global_rd_value; // write back to rd
+				printf("%s is modified to %d \n", char_registers[registerfile_rd_index], registerfile[registerfile_rd_index]);
 				break;	
 				
 			case 0: // lw
 				registerfile[registerfile_rt_index] = d_mem_entry_value;
+				printf("%s is modified to %d \n", char_registers[registerfile_rt_index], registerfile[registerfile_rt_index]);
 				break;
-				
 		}
 	}
+	
+	//increment clock cycle
+	total_clock_cycles += 1;
 	
 }
 
@@ -628,6 +651,7 @@ void writeBack(int* registerfile){
 int main(){
     int ins_index = 0;
     int totalNumofIns = 0;
+	char* instruction;
 	
 	//value that store inside the Registerfile
     int* registerfile = (int*) malloc(32*sizeof(int));
@@ -712,24 +736,40 @@ int main(){
 	//printf("%d\n", 01); // 01 will be printed as 1
     
     
-    
+    /*
     for(int i = 0; i < totalNumofIns; i++){
         decode(*(ins_memory + i), sign_extended);
-        /* Debug for what each instruction array stores decimal 48 as char 1
-         for(int j = 0; j < 32; j++){
-         printf("%s\n", *(*(ins_memory+i)+j));
-         }
-         printf("next");
-         */
         printf("\n");
-    }
+    }*/
 	
-	execute(registerfile);
 	
-	mem(data_memory, registerfile);
 	
-	writeBack(registerfile);
+	//Initialize registerfile and d_mem with given sample_binary
+	registerfile[9] = 32;
+	registerfile[10] = 5;
+	registerfile[16] = 112;
 	
+	data_memory[28] = 5;
+	data_memory[29] = 16;
+
+	
+	while(pc/4 <= totalNumofIns){
+		printf("total_clock_cycles %d :", total_clock_cycles);
+		printf("\n");
+		
+		instruction = fetch(ins_memory); 
+
+		decode(instruction, sign_extended);
+		
+		execute(registerfile);
+		
+		mem(data_memory, registerfile);
+		
+		writeBack(registerfile);
+	}
+	
+	printf("program terminated: \n");
+	printf("total execution time is %d cycles", total_clock_cycles);
 	
     
     return 0;
