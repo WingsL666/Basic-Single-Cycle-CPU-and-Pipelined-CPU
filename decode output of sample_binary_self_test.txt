@@ -1,0 +1,76 @@
+Machine code ins: 10001110000010111111111111111001
+Instruction Type: I
+Operation: lw
+Rs: s0(R16)
+Rt: t3(R11)
+leftmost bit: 1
+Negative offset
+Sign extended code:11111111111111111111111111111001
+After Flip 16 bits:0000000000000110
+Immediate: -7
+
+Machine code ins: 00000001001010100110100000100010
+Instruction Type: R
+Operation: sub
+Rs: t1(R9)
+Rt: t2(R10)
+Rd: t5(R13)
+Shamt: 0
+Funct: 34
+
+Machine code ins: 00000001101010111000100000101010
+Instruction Type: R
+Operation: slt
+Rs: t5(R13)
+Rt: t3(R11)
+Rd: s1(R17)
+Shamt: 0
+Funct: 42
+
+Machine code ins: 00010010001000001111111111111010
+Instruction Type: I
+Operation: beq
+Rs: s1(R17)
+Rt: zero(R0)
+Negative offset
+After Flip 16 bits:0000000000000101
+Immediate: -6
+
+Machine code ins: 00000001101010110110100000100000
+Instruction Type: R
+Operation: add
+Rs: t5(R13)
+Rt: t3(R11)
+Rd: t5(R13)
+Shamt: 0
+Funct: 32
+
+Machine code ins: 00000010001011010110100000100101
+Instruction Type: R
+Operation: or
+Rs: s1(R17)
+Rt: t5(R13)
+Rd: t5(R13)
+Shamt: 0
+Funct: 37
+
+Machine code ins: 10101110000011011111111111111101
+Instruction Type: I
+Operation: sw
+Rs: s0(R16)
+Rt: t5(R13)
+leftmost bit: 1
+Negative offset
+Sign extended code:11111111111111111111111111111101
+After Flip 16 bits:0000000000000010
+Immediate: -3
+
+Machine code ins: 10101110000011010000000000000000
+Instruction Type: I
+Operation: sw
+Rs: s0(R16)
+Rt: t5(R13)
+leftmost bit: 0
+Positive offset
+Sign extended code:00000000000000000000000000000000
+Immediate: 0
