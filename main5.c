@@ -38,7 +38,7 @@ int d_mem_entry_value; //store the data memory value get from lw
 char **char_registers = (char *[]) {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3","t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
 
 //Clock cycle in WB()
-int total_clock_cycles = 1;
+int total_clock_cycles = 0;
 
 char* fetch(char** ins_memory) {
     
@@ -238,22 +238,22 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
     {
         case 32:   // Add
             r_operation = "add";
-            alu_op = 0010;
+            alu_op = 10;
             break;
             
         case 34:  // Sub
             r_operation = "sub";
-            alu_op = 0110;
+            alu_op = 110;
             break;
             
         case 36:  // and
             r_operation = "and";
-            alu_op = 0000;
+            alu_op = 0;
             break;
             
         case 37: // or
             r_operation = "or";
-            alu_op = 0001;
+            alu_op = 1;
             break;
             
         case 39: // nor
@@ -263,7 +263,7 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
             
         case 42:  // slt
             r_operation = "slt";
-            alu_op = 0111;
+            alu_op = 111;
             break;
     }
     
@@ -428,7 +428,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
             MemWrite = 0;
             branch = 1;
             InstType = 01;
-            alu_op = 0110;
+			
+            alu_op = 110;
             break;
             
         case 35:  // lw
@@ -442,7 +443,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
             MemWrite = 0;
             branch = 0;
             InstType = 0;
-            alu_op = 0010;
+			
+            alu_op = 10;
             break;
             
         case 43: //sw
@@ -454,7 +456,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
             MemWrite = 1;
             branch = 0;
             InstType = 0;
-            alu_op = 0010;
+			
+            alu_op = 10;
             break;
     }
     printf("Operation: %s \n",i_operation);
@@ -533,6 +536,8 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
     
     //record immediate to global
     global_immediate = immediate;
+	
+	printf("call_I_format(): global_immediate : %d\n", global_immediate);
     
 }
 
@@ -603,7 +608,7 @@ void execute(int* registerfile){
             
         {
                 
-            case 0010:   // Add
+            case 10:   // Add
                 
                 rd_value = rs_value + rt_value;
                 
@@ -611,7 +616,7 @@ void execute(int* registerfile){
                 
                 
                 
-            case 0110:  // Sub
+            case 110:  // Sub
                 
                 rd_value = rs_value - rt_value;
                 
@@ -619,7 +624,7 @@ void execute(int* registerfile){
                 
                 
                 
-            case 0000:  // and
+            case 0:  // and
                 
                 rd_value = rs_value & rt_value; //binary AND operator
                 
@@ -627,7 +632,7 @@ void execute(int* registerfile){
                 
                 
                 
-            case 0001: // or
+            case 1: // or
                 
                 rd_value = rs_value | rt_value; //binary OR operator
                 
@@ -643,7 +648,7 @@ void execute(int* registerfile){
                 
                 
                 
-            case 0111:  // slt
+            case 111:  // slt
                 
                 rd_value = rs_value - rt_value;
                 
@@ -668,24 +673,26 @@ void execute(int* registerfile){
         
         
         global_rd_value = rd_value; //store this to global for write back later
+		
+		printf("exe():global_rd_value for R type: %d\n", global_rd_value);
         
         
         
     }
     
     else if(InstType == 0){ // lw or sw
-        
-        
+        rs_value = registerfile[registerfile_rs_index];
         
         switch(alu_op)
             
         {
                 
-            case 0010:   // Add
-                
+            case 10:   // Add
                 d_mem_entry_address = rs_value + global_immediate; //store the data entry address to global
                 
-                break;
+				printf("exe():d_mem_entry_address for lw sw: %d, rs_value: %d, global_immediate: %d\n", d_mem_entry_address, rs_value, global_immediate);
+                
+				break;
                 
         }
         
@@ -694,14 +701,12 @@ void execute(int* registerfile){
     }
     
     else if(InstType == 01){ // beq
-        
-        
-        
+          
         switch(alu_op)
             
         {
                 
-            case 0110:  // Sub
+            case 110:  // Sub
                 
                 rd_value = rs_value - rt_value;
                 
@@ -749,61 +754,69 @@ void execute(int* registerfile){
 
 
 void mem(int* data_memory, int* registerfile){
-    
-    
-    
-    if(InstType == 0){ // lw or sw
-        
-        switch(MemWrite)
+	
+	printArrWithSpace(registerfile,32);
+	printArrWithSpace(data_memory,32);
+	
+	if(InstType == 0){
+		printf("check InstType == 0\n");
+		switch(MemWrite)
             
         {
                 
             case 0:  // lw
+				printf("check MemWrite case 0, d_mem_entry_address: %d \n", d_mem_entry_address);
                 
-                d_mem_entry_value = data_memory[d_mem_entry_address]; //load the memory to global var
+				//divide by 4 to get the real index in data_memory
+                d_mem_entry_value = data_memory[d_mem_entry_address/4]; //load the memory to global var
+				
+				printf("prepare load value:%d \n", d_mem_entry_value);
                 
                 break;
                 
                 
                 
             case 1:  // sw
+				printf("check MemWrite case 1\n");
                 
                 data_memory[d_mem_entry_address] = registerfile[registerfile_rt_index]; //store value in rt to data memory
                 
-                printf("memory %d is modified to %d\n", d_mem_entry_address, data_memory[d_mem_entry_address]);
+                printf("memory 0x%X is modified to 0x%X by sw\n", d_mem_entry_address, data_memory[d_mem_entry_address]);
                 
                 break;
                 
         }
-        
-    }
+	}
+	
 }
 
 void writeBack(int* registerfile){
     
     
-    
     if(RegWrite == 1){ //write to register is true
-        
+        printf("RegWrite == 1\n");
+		
         switch(InstType)
             
         {
                 
             case 10:   // R type
-                
+                printf("writeBack() R type: registerfile_rd_index: %d, global_rd_value: %d\n",registerfile_rd_index, global_rd_value);
+				
                 registerfile[registerfile_rd_index] = global_rd_value; // write back to rd
                 
-                printf("%s is modified to %d \n", char_registers[registerfile_rd_index], registerfile[registerfile_rd_index]);
+                printf("$%s is modified to 0x%X \n", char_registers[registerfile_rd_index], registerfile[registerfile_rd_index]);
                 
                 break;
                 
                 
                 
             case 0: // lw
-                
+                printf("writeBack() lw: registerfile_rd_index: %d, d_mem_entry_value: %d\n",registerfile_rt_index, d_mem_entry_value);
+				
                 registerfile[registerfile_rt_index] = d_mem_entry_value;
                 
-                printf("%s is modified to %d \n", char_registers[registerfile_rt_index], registerfile[registerfile_rt_index]);
+                printf("$%s is modified to 0x%X \n", char_registers[registerfile_rt_index], registerfile[registerfile_rt_index]);
                 
                 break;
                 
@@ -953,13 +966,17 @@ int main(){
     while(pc/4 < totalNumofIns){ // ins_memory have index from 0 to 7, so < 8
 		printf("\n");
 		printf("current pc: %d \n", pc);
-        printf("total_clock_cycles %d :", total_clock_cycles);
+        printf("total_clock_cycles %d :", total_clock_cycles + 1);
         printf("\n");
         instruction = fetch(ins_memory);
         decode(instruction, sign_extended);
         execute(registerfile);
-        //mem(data_memory, registerfile);
-        //writeBack(registerfile);
+		
+		printf("InstType: %d, alu_op: %d, RegWrite: %d, MemWrite: %d\n", InstType, alu_op, RegWrite, MemWrite);
+        mem(data_memory, registerfile);
+        writeBack(registerfile);
+		
+		printf("pc is modified to 0x%X\n", pc);
 		
 		printArrWithSpace(registerfile,32);
 		printArrWithSpace(data_memory,32);
