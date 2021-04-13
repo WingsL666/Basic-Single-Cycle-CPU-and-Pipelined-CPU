@@ -5,7 +5,7 @@
 
 //Global for Fetch()
 int pc = 0;
-int next_pc = 4;
+int next_pc;
 char** ins_memory;
 
 //Global for Decode()
@@ -44,6 +44,7 @@ char* fetch(char** ins_memory) {
     
     char* instruction;
     
+	/*
     if(jump == 1){ //get the signal left from the last instruction
         pc = jump_target;
     }
@@ -54,14 +55,20 @@ char* fetch(char** ins_memory) {
     
     else{
         pc = next_pc;
-    }
+    }*/
     
-    printf("pc is modified to %d \n", pc);
-    int ins_index = (pc / 4) - 1;
+
+    int ins_index = pc / 4;
+	printf("pc ins index is %d \n", ins_index);
+	
     instruction = ins_memory[ins_index];
     
     //increment pc
     next_pc = pc + 4;
+	
+	pc = next_pc;
+	
+	printf("pc is modified to next_pc: %d \n", pc);
     
     return instruction;
 }
@@ -393,7 +400,9 @@ void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit
     
     jump_target += merge4;
     
-    
+    pc = jump_target; //update pc to jump_target
+	
+	printf("pc is modified to jump_target: %d \n", pc);
     
 }
 
@@ -715,11 +724,16 @@ void execute(int* registerfile){
         }
         
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
+		
+		
+        //Since pc have already be modified to next_pc in fetch(), no need to do +4 below
+        //branch_target = pc + 4 + branch_target; // add pc + 4 to it
+		//change it to:
+		branch_target = pc + branch_target;
         
-        branch_target = pc + 4 + branch_target; // add pc + 4 to it
-        
-        
-        
+        pc = branch_target; //update pc to branch_target
+		
+		printf("pc is modified to branch_target: %d \n", pc);
     }
     
     
@@ -820,7 +834,7 @@ int main(){
         *(registerfile+i) = 0;
     }
     
-    printArrWithSpace(registerfile,32);
+    //printArrWithSpace(registerfile,32);
     //initialize data memory
     int* data_memory = (int*) malloc(32*sizeof(int));
     
@@ -828,7 +842,7 @@ int main(){
         *(data_memory+i) = 0;
     }
     
-    printArrWithSpace(data_memory,32);
+    //printArrWithSpace(data_memory,32);
     
     //array to store sign-extended offet
     int* sign_extended = (int*) malloc(32*sizeof(int));
@@ -936,14 +950,19 @@ int main(){
     data_memory[29] = 16;
     
     
-    while(pc/4 < totalNumofIns){
+    while(pc/4 < totalNumofIns){ // ins_memory have index from 0 to 7, so < 8
+		printf("\n");
+		printf("current pc: %d \n", pc);
         printf("total_clock_cycles %d :", total_clock_cycles);
         printf("\n");
         instruction = fetch(ins_memory);
         decode(instruction, sign_extended);
         execute(registerfile);
-        mem(data_memory, registerfile);
-        writeBack(registerfile);
+        //mem(data_memory, registerfile);
+        //writeBack(registerfile);
+		
+		printArrWithSpace(registerfile,32);
+		printArrWithSpace(data_memory,32);
     }
     
     printf("program terminated: \n");
