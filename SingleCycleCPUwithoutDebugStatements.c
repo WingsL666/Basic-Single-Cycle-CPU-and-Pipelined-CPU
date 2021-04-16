@@ -6,7 +6,6 @@
 //Global for Fetch()
 int pc = 0;
 int next_pc;
-char** ins_memory;
 
 //Global for Decode()
 int jump_target = 0;
