@@ -1,0 +1,84 @@
+Total number of lines are: 8
+
+Clock Cycle: 1
+Fetch() instructionpc ins index is 0
+Decode() data from if_id buffer and processing instruction #0
+code: 10001110000010110000000000000100
+pc is modified to next_pc: 4
+
+Clock Cycle: 2
+Fetch() instructionpc ins index is 1
+Exe() data from id_ex buffer and processing instruction #0
+Decode() data from if_id buffer and processing instruction #1
+code: 00000001001010100110100000100010
+pc is modified to next_pc: 8
+
+Clock Cycle: 3
+Fetch() instructionpc ins index is 2
+Mem() data from ex_mem buffer and processing instruction #0
+Exe() data from id_ex buffer and processing instruction #1
+Decode() data from if_id buffer and processing instruction #2
+code: 00000001101010111000100000101010
+pc is modified to next_pc: 12
+
+Clock Cycle: 4
+Fetch() instructionpc ins index is 3
+WB() data from mem_wb buffer and processing instruction #0
+Mem() data from ex_mem buffer and processing instruction #1
+Exe() data from id_ex buffer and processing instruction #2
+Decode() data from if_id buffer and processing instruction #3
+code: 00010010001000000000000000000011
+pc is modified to next_pc: 16
+
+Clock Cycle: 5
+Fetch() instructionpc ins index is 4
+WB() data from mem_wb buffer and processing instruction #1
+Mem() data from ex_mem buffer and processing instruction #2
+Exe() data from id_ex buffer and processing instruction #3
+Decode() data from if_id buffer and processing instruction #4
+code: 00000001101010110110100000100000
+pc is modified to next_pc: 20
+
+Clock Cycle: 6
+Fetch() instructionpc ins index is 5
+WB() data from mem_wb buffer and processing instruction #2
+Mem() data from ex_mem buffer and processing instruction #3
+Exe() data from id_ex buffer and processing instruction #4
+Decode() data from if_id buffer and processing instruction #5
+code: 00000010001011010110100000100101
+pc is modified to next_pc: 24
+
+Clock Cycle: 7
+Fetch() instructionpc ins index is 6
+WB() data from mem_wb buffer and processing instruction #3
+Mem() data from ex_mem buffer and processing instruction #4
+Exe() data from id_ex buffer and processing instruction #5
+Decode() data from if_id buffer and processing instruction #6
+code: 10101110000011010000000000000000
+pc is modified to next_pc: 28
+
+Clock Cycle: 8
+Fetch() instructionpc ins index is 7
+WB() data from mem_wb buffer and processing instruction #4
+Mem() data from ex_mem buffer and processing instruction #5
+Exe() data from id_ex buffer and processing instruction #6
+Decode() data from if_id buffer and processing instruction #7
+code: 10101110000011010000000000000000
+pc is modified to next_pc: 32
+
+Clock Cycle: 9
+Fetch() instructionpc ins index is 8
+WB() data from mem_wb buffer and processing instruction #5
+Mem() data from ex_mem buffer and processing instruction #6
+Exe() data from id_ex buffer and processing instruction #7
+
+Clock Cycle: 10
+Fetch() instructionpc ins index is 8
+WB() data from mem_wb buffer and processing instruction #6
+Mem() data from ex_mem buffer and processing instruction #7
+
+Clock Cycle: 11
+Fetch() instructionpc ins index is 8
+WB() data from mem_wb buffer and processing instruction #7
+program terminated:
+total execution time is 11 cycles
