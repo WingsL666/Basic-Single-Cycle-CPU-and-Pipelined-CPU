@@ -965,7 +965,7 @@ int main(){
 	
 	8: int global_immediate; 
 
-	//9 control signals
+	//control signals
 	9: int jump = 0; 
 	10: int RegWrite; 
 	11: int MemWrite; 
@@ -986,16 +986,34 @@ int main(){
 	
 	//!!!!!!store important variable in buffer in each individual stage functions
 	
+	//The first clock cycle that only have one fetch()
+	/*
+	printf("Clock Cycle: %d\n", total_clock_cycles);
+	if_id_ins = fetch(ins_memory);
+	if_id[0] = 2; //send current ins to stage 2
+	if_id[1] = pc/4; 
+	printf("Fetch() instruction #%d", if_id[1]);
+	total_clock_cycles++;*/
+	//
+	
+	//the rest of the clock cycles:
 	while(free){
 		printf("\n");
 		printf("Clock Cycle: %d\n", total_clock_cycles);
-		printf("Fetch() instruction");
 		
 		if_id_ins = fetch(ins_memory);
 		
+		
 		if(if_id_ins != NULL){
 			if_id[0] = 2; //send current ins to stage 2
-			if_id[1] = pc/4; 
+			if_id[1] = pc/4; //pass the ins index to stage 2 also
+			
+			if(pc/4 == 0){ // This if-statement only apply to The first clock cycle that only have one fetch()
+				//Note: later cycle does not print fetch() debug statement due to fetch at beginning 
+				printf("Fetch() instruction #%d\n", if_id[1]);
+				total_clock_cycles++;
+				printf("\nClock Cycle: %d\n", total_clock_cycles);
+			}
 		}
 		
 		
@@ -1019,6 +1037,8 @@ int main(){
 			mem_wb[0] = 5;
 			
 			mem_wb[1] = ex_mem[1];
+			
+			//!!!!!!!can do nop here by setting id_ex[0] and if_id[0] to 0
 		}
 		
 		
@@ -1052,6 +1072,8 @@ int main(){
 		
 		//modify pc pointer
 		//pc = mem_wb[2] //!!!!where the element stores the address for the next pc
+		
+		
 		total_clock_cycles++;
 	}
     
