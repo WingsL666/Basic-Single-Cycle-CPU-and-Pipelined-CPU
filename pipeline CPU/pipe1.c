@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-#define FILENAME "sample_binary.txt"
+#define FILENAME "sample_binary_self_test_withJump.txt"
 
 //Global for Fetch()
 int pc = 0; 
@@ -53,20 +53,6 @@ char* fetch(char** ins_memory) {
     
     char* instruction;
     
-	/*
-    if(jump == 1){ //get the signal left from the last instruction
-        pc = jump_target;
-    }
-    
-    else if(branch == 1){
-        pc = branch_target;
-    }
-    
-    else{
-        pc = next_pc;
-    }*/
-    
-
     int ins_index = pc / 4;
 	printf("pc ins index is %d \n", ins_index);
 	
@@ -196,11 +182,11 @@ int* convertDecimalto32bitBinary(int deciaml){
     
     for(int i = 0;n > 0;i++){
         
-        arr[i] = n % 2;
+        arr[31-i] = n % 2;
         n = n/2;
     }
     
-    printf("Convert %d to binary:",pc);
+    printf("Convert the current pc = %d to binary:",pc);
     printArr(arr,32);
     
     return arr;
@@ -332,6 +318,23 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
     //record the shmat to global
     //global_shamt = shamt;
     printf("Funct: %d \n",function);
+	
+	
+	
+	//Store data to id_ex buffer to be use in stage 3(aka exe stage)
+	id_ex[5] = registerfile_rs_index;
+	id_ex[6] = registerfile_rt_index;
+	id_ex[7] = registerfile_rd_index;
+	
+	id_ex[9] = jump; 
+	id_ex[10] = RegWrite; 
+	id_ex[11] = MemWrite; 
+	id_ex[12] = branch; 
+	id_ex[13] = InstType; 
+	id_ex[14] = alu_op; 
+	
+	printf("id_ex in call_R_format:");
+	printArrWithSpace(id_ex, 20);
 }
 
 
@@ -339,17 +342,13 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
 void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit()
     
     printf("Instruction Type: J \n");
-    
-    
-    
+
     int target_address = 0;
     
     int counter_power = 0;
     
     char* j_operation;
-    
-    
-    
+
     switch(opcode)
         
     {
@@ -413,6 +412,17 @@ void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit
 	
 	printf("pc is modified to jump_target: %d \n", pc);
     
+	
+	//Global for Decode() variables dictionary that will be store in buffer
+	id_ex[4] = jump_target; 
+	
+	id_ex[9] = jump; 
+	id_ex[10] = RegWrite; 
+	id_ex[11] = MemWrite; 
+	id_ex[12] = branch; 
+	
+	printf("id_ex in call_J_format:");
+	printArrWithSpace(id_ex, 20);
 }
 
 
@@ -548,6 +558,42 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 	
 	printf("call_I_format(): global_immediate : %d\n", global_immediate);
     
+	
+	
+	//Global for Decode() variables dictionary that will be store in buffer
+	/*
+	4: int jump_target = 0; 
+	
+	5: int registerfile_rs_index;
+	6: int registerfile_rt_index; 
+	7: int registerfile_rd_index; 
+	
+	8: int global_immediate; 
+
+	//control signals
+	9: int jump = 0; 
+	10: int RegWrite; 
+	11: int MemWrite; 
+	12: int branch = 0; 
+	13: int InstType; 
+	14: int alu_op; 
+	*/
+	
+	
+	id_ex[5] = registerfile_rs_index;
+	id_ex[6] = registerfile_rt_index;
+	
+	id_ex[8] = global_immediate;
+	
+	id_ex[9] = jump; 
+	id_ex[10] = RegWrite; 
+	id_ex[11] = MemWrite; 
+	id_ex[12] = branch; 
+	id_ex[13] = InstType; 
+	id_ex[14] = alu_op; 
+	
+	printf("id_ex in call_I_format:");
+	printArrWithSpace(id_ex, 20);
 }
 
 
@@ -589,6 +635,8 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
     else{
         call_I_format(machineCode, char_registers, opcode, sign_extended);
     }
+	
+	
 }
 
 
@@ -610,53 +658,39 @@ void execute(int* registerfile){
         rs_value = registerfile[registerfile_rs_index];
         
         rt_value = registerfile[registerfile_rt_index];
-        
-        
-        
+
         switch(alu_op)
-            
         {
-                
             case 10:   // Add
                 
                 rd_value = rs_value + rt_value;
                 
                 break;
-                
-                
-                
+
             case 110:  // Sub
                 
                 rd_value = rs_value - rt_value;
                 
                 break;
-                
-                
-                
+
             case 0:  // and
                 
                 rd_value = rs_value & rt_value; //binary AND operator
                 
                 break;
-                
-                
-                
+ 
             case 1: // or
                 
                 rd_value = rs_value | rt_value; //binary OR operator
                 
                 break;
-                
-                
-                
+
             case 1100: // nor
                 
                 rd_value = ~(rs_value | rt_value);
                 
                 break;
-                
-                
-                
+
             case 111:  // slt
                 
                 rd_value = rs_value - rt_value;
@@ -674,9 +708,6 @@ void execute(int* registerfile){
                 }
                 
                 break;
-                
-                
-                
         }
         
         
@@ -685,31 +716,23 @@ void execute(int* registerfile){
 		
 		printf("exe():global_rd_value for R type: %d\n", global_rd_value);
         
-        
-        
     }
     
     else if(InstType == 0){ // lw or sw
         rs_value = registerfile[registerfile_rs_index];
         
         switch(alu_op)
-            
-        {
-                
+        {     
             case 10:   // Add
                 d_mem_entry_address = rs_value + global_immediate; //store the data entry address to global
                 
 				printf("exe():d_mem_entry_address for lw sw: %d, rs_value: %d, global_immediate: %d\n", d_mem_entry_address, rs_value, global_immediate);
                 
 				break;
-                
-        }
-        
-        
-        
+        }  
     }
     
-    else if(InstType == 01){ // beq
+    else if(branch == 1){ // beq
           
         switch(alu_op)
             
@@ -732,9 +755,6 @@ void execute(int* registerfile){
                 }
                 
                 break;
-                
-                
-                
         }
         
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
@@ -877,7 +897,7 @@ int main(){
 	
 	
 	//assign spaces to pipeline registers(buffers)
-	if_id = (int*) malloc(52*sizeof(int)); //0-31 store the machine code instruction
+	if_id = (int*) malloc(52*sizeof(int));
     id_ex = (int*) malloc(52*sizeof(int)); 
     ex_mem = (int*) malloc(52*sizeof(int));
     mem_wb = (int*) malloc(52*sizeof(int));
@@ -984,17 +1004,6 @@ int main(){
 	
 	*/
 	
-	//!!!!!!store important variable in buffer in each individual stage functions
-	
-	//The first clock cycle that only have one fetch()
-	/*
-	printf("Clock Cycle: %d\n", total_clock_cycles);
-	if_id_ins = fetch(ins_memory);
-	if_id[0] = 2; //send current ins to stage 2
-	if_id[1] = pc/4; 
-	printf("Fetch() instruction #%d", if_id[1]);
-	total_clock_cycles++;*/
-	//
 	
 	//the rest of the clock cycles:
 	while(free){
@@ -1058,8 +1067,9 @@ int main(){
 		
 		if( if_id[0] == 2){ //check if the if_id buffer is empty or not, 0 is empty, 2 is not empty 
 			printf("Decode() data from if_id buffer and processing instruction #%d\n", if_id[1]);
-			printf("code: %s\n", if_id_ins);
-			//decode(instruction, sign_extended); 
+			//printf("code: %s\n", if_id_ins);
+			
+			decode(if_id_ins, sign_extended); 
 			
 			if_id[0] = 0; //done with transferring data in buffer if_id to id_ex, buffer if_id is now consider empty
 			id_ex[0] = 3; // id_ex is now fill with data
@@ -1069,10 +1079,6 @@ int main(){
 			pc = next_pc;
 			printf("pc is modified to next_pc: %d \n", pc);
 		}
-		
-		//modify pc pointer
-		//pc = mem_wb[2] //!!!!where the element stores the address for the next pc
-		
 		
 		total_clock_cycles++;
 	}
