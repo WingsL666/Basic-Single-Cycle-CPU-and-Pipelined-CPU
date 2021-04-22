@@ -186,23 +186,22 @@ int* convertDecimalto32bitBinary(int deciaml){
     
     for(int i = 0;n > 0;i++){
         
-        arr[i] = n % 2;
+        arr[31-i] = n % 2;
         n = n/2;
     }
     
-    //printf("Convert %d to binary:",pc);
-    //printArr(arr,32);
+    printf("Convert the current pc = %d to binary:",pc);
+    printArr(arr,32);
     
     return arr;
 }
 
 int getFirst4bitReturnAsDecimal(int* binary32){ //get the first 4 bits in pc and convert it to decimal
-    
     int dec = 0, counter_power = 0;
     
     for(int i = 0; i < 4;i++){
         dec = dec + (*(binary32+i)*twoToPower(31-i));//TwoToPower(31-counter_power) gets 2^31...2^28
-    }
+	}
     
     return dec;
 }
@@ -592,9 +591,7 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
 void execute(int* registerfile){
     
     int rs_value,rt_value,rd_value;
-    
-    
-    
+ 
     //Run ALU Operation
     
     if(InstType == 10){ //R type
@@ -701,20 +698,23 @@ void execute(int* registerfile){
         
     }
     
-    else if(InstType == 01){ // beq
+    else if(branch == 1){ // beq
+		rs_value = registerfile[registerfile_rs_index];
+        rt_value = registerfile[registerfile_rt_index];
           
         switch(alu_op)
             
         {
                 
             case 110:  // Sub
+				//printf("Enter 110 with rs = %d and rt = %d\n", rs_value, rt_value);
                 
                 rd_value = rs_value - rt_value;
                 
                 if(rd_value == 0){
                     
                     alu_zero = 1; // means rd is equal to zero is true aka rs and rt are equal
-                    
+          
                 }
                 
                 else{
@@ -729,17 +729,14 @@ void execute(int* registerfile){
                 
         }
         
+		
+		//Calculate branch_target address
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
-		
-		
         //Since pc have already be modified to next_pc in fetch(), no need to do +4 below
         //branch_target = pc + 4 + branch_target; // add pc + 4 to it
 		//change it to:
 		branch_target = pc + branch_target;
-        
-        pc = branch_target; //update pc to branch_target
 		
-		//printf("pc is modified to branch_target: %d \n", pc);
     }
     
     
@@ -787,6 +784,13 @@ void mem(int* data_memory, int* registerfile){
                 break;
                 
         }
+	}
+	else if(branch == 1 && alu_zero == 1){ //both branch condition satisfy
+		//update pc to branch_target
+		pc = branch_target; 
+					
+		//printf("pc is modified to branch_target: %d \n", pc);
+		//printf("!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
 	}
 	
 }
