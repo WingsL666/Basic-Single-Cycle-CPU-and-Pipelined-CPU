@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-#define FILENAME "sample_binary_self_test_withJump.txt"
+#define FILENAME "sample_binary.txt"
 
 //Global for Fetch()
 int pc = 0; 
@@ -42,6 +42,7 @@ int total_clock_cycles = 1;
 
 
 //Pipeline stage registers: work as buffers to store all variables
+int if_stage; //indicate if is in Fetch() stage or not with 1 as true, 0 as false
 char* if_id_ins;//store machine code in if_id buffer
 int* if_id;
 int* id_ex; 
@@ -646,10 +647,26 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
 
 
 void execute(int* registerfile){
+	
+	//Get data from id_ex buffer
+	jump_target = id_ex[4];
+	
+	registerfile_rs_index = id_ex[5];
+	registerfile_rt_index = id_ex[6];
+	registerfile_rd_index = id_ex[7];
+	
+	global_immediate = id_ex[8];
+	
+	jump = id_ex[9]; 
+	RegWrite = id_ex[10]; 
+	MemWrite = id_ex[11]; 
+	branch = id_ex[12]; 
+	InstType = id_ex[13]; 
+	alu_op = id_ex[14]; 
+	//
+	
     
     int rs_value,rt_value,rd_value;
-    
-    
     
     //Run ALU Operation
     
@@ -733,19 +750,22 @@ void execute(int* registerfile){
     }
     
     else if(branch == 1){ // beq
+		rs_value = registerfile[registerfile_rs_index];
+        rt_value = registerfile[registerfile_rt_index];
           
         switch(alu_op)
             
         {
                 
             case 110:  // Sub
+				//printf("Enter 110 with rs = %d and rt = %d\n", rs_value, rt_value);
                 
                 rd_value = rs_value - rt_value;
                 
                 if(rd_value == 0){
                     
                     alu_zero = 1; // means rd is equal to zero is true aka rs and rt are equal
-                    
+          
                 }
                 
                 else{
@@ -755,23 +775,41 @@ void execute(int* registerfile){
                 }
                 
                 break;
+                
         }
-        
+		
+		//Calculate branch_target address
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
-		
-		
         //Since pc have already be modified to next_pc in fetch(), no need to do +4 below
         //branch_target = pc + 4 + branch_target; // add pc + 4 to it
 		//change it to:
 		branch_target = pc + branch_target;
-        
-		
-		//if assuming branch is Not Taken, don't update the pc to branch target yet, so commect the line below here:
-        //pc = branch_target; //update pc to branch_target
-		
-		printf("pc is modified to branch_target: %d \n", pc);
     }
-    
+	
+	
+	
+	//Pass data to ex_mem buffer
+	ex_mem[4] = jump_target;
+	
+	ex_mem[5] = registerfile_rs_index;
+	ex_mem[6] = registerfile_rt_index;
+	ex_mem[7] = registerfile_rd_index;
+	
+	ex_mem[8] = global_immediate;
+	
+	ex_mem[9] = jump; 
+	ex_mem[10] = RegWrite; 
+	ex_mem[11] = MemWrite; 
+	ex_mem[12] = branch; 
+	ex_mem[13] = InstType; 
+	ex_mem[14] = alu_op; 
+	
+	
+	ex_mem[15] = alu_zero; 
+	ex_mem[16] = branch_target; 
+	ex_mem[17] = global_rd_value; 
+	ex_mem[18] = d_mem_entry_address; 
+	//
     
     
 }
@@ -785,6 +823,29 @@ void execute(int* registerfile){
 
 
 void mem(int* data_memory, int* registerfile){
+	
+	//Get data from ex_mem buffer
+	jump_target = ex_mem[4];
+	
+	registerfile_rs_index = ex_mem[5];
+	registerfile_rt_index = ex_mem[6];
+	registerfile_rd_index = ex_mem[7];
+	
+	global_immediate = ex_mem[8];
+	
+	jump = ex_mem[9]; 
+	RegWrite = ex_mem[10]; 
+	MemWrite = ex_mem[11]; 
+	branch = ex_mem[12]; 
+	InstType = ex_mem[13]; 
+	alu_op = ex_mem[14]; 
+	
+	
+	alu_zero = ex_mem[15]; 
+	branch_target = ex_mem[16]; 
+	global_rd_value = ex_mem[17]; 
+	d_mem_entry_address = ex_mem[18]; 
+	//
 	
 	printArrWithSpace(registerfile,32);
 	printArrWithSpace(data_memory,32);
@@ -818,10 +879,44 @@ void mem(int* data_memory, int* registerfile){
                 
         }
 	}
+	else if(branch == 1 && alu_zero == 1){ //both branch condition satisfy
+		//update pc to branch_target
+		pc = branch_target; 
+					
+		//printf("pc is modified to branch_target: %d \n", pc);
+		//printf("!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
+	}
+	
+	
+	//Store data to mem_wb buffer
+	ex_mem[6] = registerfile_rt_index;
+	ex_mem[7] = registerfile_rd_index;
+	
+	ex_mem[10] = RegWrite; 
+	ex_mem[13] = InstType; 
+	
+	ex_mem[17] = global_rd_value; 
+	ex_mem[18] = d_mem_entry_address; 
+	
+	ex_mem[19] = d_mem_entry_value;
+	//
+	
 	
 }
 
 void writeBack(int* registerfile){
+	
+	//Get data from ex_mem buffer
+	registerfile_rt_index = ex_mem[6];
+	registerfile_rd_index = ex_mem[7];
+	
+	RegWrite = ex_mem[10]; 
+	InstType = ex_mem[13]; 
+	
+	global_rd_value = ex_mem[17]; 
+	d_mem_entry_address = ex_mem[18]; 
+	d_mem_entry_value = ex_mem[19];
+	//
     
     
     if(RegWrite == 1){ //write to register is true
@@ -856,10 +951,6 @@ void writeBack(int* registerfile){
     }
     
     
-    
-    //increment clock cycle
-    
-    //total_clock_cycles += 1;  
 }
 
 
@@ -1005,25 +1096,14 @@ int main(){
 	*/
 	
 	
+	
+	if_stage = 1; //tell CPU to start fetching the first instruction
+	
+	
 	//the rest of the clock cycles:
 	while(free){
 		printf("\n");
 		printf("Clock Cycle: %d\n", total_clock_cycles);
-		
-		if_id_ins = fetch(ins_memory);
-		
-		
-		if(if_id_ins != NULL){
-			if_id[0] = 2; //send current ins to stage 2
-			if_id[1] = pc/4; //pass the ins index to stage 2 also
-			
-			if(pc/4 == 0){ // This if-statement only apply to The first clock cycle that only have one fetch()
-				//Note: later cycle does not print fetch() debug statement due to fetch at beginning 
-				printf("Fetch() instruction #%d\n", if_id[1]);
-				total_clock_cycles++;
-				printf("\nClock Cycle: %d\n", total_clock_cycles);
-			}
-		}
 		
 		
 		//Put individual if statements from 5 to 1, so CPU move on with order 4->5, 3->4...1->2
@@ -1067,18 +1147,36 @@ int main(){
 		
 		if( if_id[0] == 2){ //check if the if_id buffer is empty or not, 0 is empty, 2 is not empty 
 			printf("Decode() data from if_id buffer and processing instruction #%d\n", if_id[1]);
-			//printf("code: %s\n", if_id_ins);
+			printf("code: %s\n", if_id_ins);
 			
-			decode(if_id_ins, sign_extended); 
+			//decode(if_id_ins, sign_extended); 
 			
 			if_id[0] = 0; //done with transferring data in buffer if_id to id_ex, buffer if_id is now consider empty
 			id_ex[0] = 3; // id_ex is now fill with data
 			
 			id_ex[1] = if_id[1]; //pass the ins index to next stage
 			
-			pc = next_pc;
-			printf("pc is modified to next_pc: %d \n", pc);
 		}
+		
+		
+		
+		
+		
+		if(if_stage == 1){
+			if(pc/4 < totalNumofIns){
+				if_id_ins = fetch(ins_memory);
+				printf("Fetch() instruction #%d\n", pc/4);
+				if_id[0] = 2; //send current ins to stage 2
+				if_id[1] = pc/4; //pass the ins index to stage 2 also
+				
+				pc = next_pc;
+				printf("pc is modified to next_pc: %d \n", pc);
+			}
+			else{//aka if reach the end of all instruction
+				if_stage == 0; //stop fetching by setting if_stage to 0
+			}
+		}
+		
 		
 		total_clock_cycles++;
 	}
