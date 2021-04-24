@@ -665,7 +665,7 @@ void execute(int* registerfile){
 	alu_op = id_ex[14]; 
 	//
 	
-    
+    /*
     int rs_value,rt_value,rd_value;
     
     //Run ALU Operation
@@ -785,7 +785,7 @@ void execute(int* registerfile){
 		//change it to:
 		branch_target = pc + branch_target;
     }
-	
+	*/
 	
 	
 	//Pass data to ex_mem buffer
@@ -847,6 +847,7 @@ void mem(int* data_memory, int* registerfile){
 	d_mem_entry_address = ex_mem[18]; 
 	//
 	
+	/*
 	printArrWithSpace(registerfile,32);
 	printArrWithSpace(data_memory,32);
 	
@@ -885,7 +886,7 @@ void mem(int* data_memory, int* registerfile){
 					
 		//printf("pc is modified to branch_target: %d \n", pc);
 		//printf("!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
-	}
+	}*/
 	
 	
 	//Store data to mem_wb buffer
@@ -918,7 +919,7 @@ void writeBack(int* registerfile){
 	d_mem_entry_value = ex_mem[19];
 	//
     
-    
+    /*
     if(RegWrite == 1){ //write to register is true
         printf("RegWrite == 1\n");
 		
@@ -948,7 +949,7 @@ void writeBack(int* registerfile){
                 
         }
         
-    }
+    }*/
     
     
 }
@@ -988,10 +989,10 @@ int main(){
 	
 	
 	//assign spaces to pipeline registers(buffers)
-	if_id = (int*) malloc(52*sizeof(int));
-    id_ex = (int*) malloc(52*sizeof(int)); 
-    ex_mem = (int*) malloc(52*sizeof(int));
-    mem_wb = (int*) malloc(52*sizeof(int));
+	if_id = (int*) malloc(25*sizeof(int));
+    id_ex = (int*) malloc(25*sizeof(int)); 
+    ex_mem = (int*) malloc(25*sizeof(int));
+    mem_wb = (int*) malloc(25*sizeof(int));
 	
 	
 	
@@ -1095,7 +1096,15 @@ int main(){
 	
 	*/
 	
+	int if_nop_counter = 0;
+	int id_nop_counter = 0;
 	
+	typedef enum {
+	   false, true
+	}
+	bool;
+	
+	bool is_in_nop = false;
 	
 	if_stage = 1; //tell CPU to start fetching the first instruction
 	
@@ -1105,41 +1114,218 @@ int main(){
 		printf("\n");
 		printf("Clock Cycle: %d\n", total_clock_cycles);
 		
+		/*
+		printf("~~~~~~~~~~~~~~~~\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("~~~~~~~~~~~~~~~~\n");
+		*/
 		
 		//Put individual if statements from 5 to 1, so CPU move on with order 4->5, 3->4...1->2
 		if( mem_wb[0] == 5){ //check if the mem_wb buffer is empty or not, 0 is empty, 5 is not empty 
-			printf("WB() data from mem_wb buffer and processing instruction #%d\n", mem_wb[1]);
+			printf("!!!!!!!!!!!!nop counter in wb(): %d\n", id_nop_counter);
 			
-			mem_wb[0] = 0;
+			printf("WB() data from mem_wb buffer and processing instruction #%d\n", mem_wb[1]);
+			writeBack(registerfile);
+			
+			mem_wb[0] = 0; // turn off current stage
+			
 			
 			if(mem_wb[1] == totalNumofIns - 1){ //reach the last intruction's writeback, where totalNumofIns - 1 is the index of the last intruction of inout txt file
 				break;
 			}
+			
+
+			if(id_nop_counter == 2 && if_nop_counter == 2 && is_in_nop == true){ //indicate second nop is finish
+				//second nop
+				id_ex[0] = 3;
+				ex_mem[0] = 0;
+				
+				printf("In WB() id_ex[0] is %d\n", id_ex[0]);
+				printf("In WB() if_nop_counter is %d\n", if_nop_counter);
+				total_clock_cycles++;
+				continue;
+				
+			}
+			
+			int is_in_nop_d = 0;
+			if(is_in_nop == true){
+				is_in_nop_d = 1;
+			}
+			printf("!!!!!!!!!!!!nop counter in wb(): %d with is_in_nop as %d\n", id_nop_counter, is_in_nop_d);
+			
+			
+			
+			
+			
 		}
 		
 		
 		
 		if( ex_mem[0] == 4){ //check if the ex_mem buffer is empty or not, 0 is empty, 4 is not empty 
-			printf("Mem() data from ex_mem buffer and processing instruction #%d\n", ex_mem[1]);
+			printf("!!!!!!!!!!!!nop counter in mem(): %d\n", id_nop_counter);
 			
-			ex_mem[0] = 0;
-			mem_wb[0] = 5;
+			int is_in_nop_d = 0;
+			if(is_in_nop == true){
+				is_in_nop_d = 1;
+			}
+			printf("!!!!!!!!!!!!nop counter in mem(): %d with is_in_nop as %d\n", id_nop_counter, is_in_nop_d);
 			
-			mem_wb[1] = ex_mem[1];
 			
-			//!!!!!!!can do nop here by setting id_ex[0] and if_id[0] to 0
+			
+			if(if_nop_counter == 2 && id_nop_counter == 2 && is_in_nop == true){
+				printf("is seccccccccccccccond nop finish\n");
+				//second nop only run wb() later
+				ex_mem[0] = 0; // turn off current stage
+				mem_wb[0] = 0;
+				//mem_wb[1] = ex_mem[1];//duplicate with code above to show the second nop condition here
+				id_ex[0] == 3;
+				if_nop_counter = 3; //start sencond nop indicate with 2 using "continue;" below
+				id_nop_counter = 3;
+				total_clock_cycles++;
+				continue;
+			}
+			else{ 
+				printf("Mem() data from ex_mem buffer and processing instruction #%d\n", ex_mem[1]);
+				mem(data_memory, registerfile);
+				
+				ex_mem[0] = 0;
+				mem_wb[0] = 5;
+				
+				mem_wb[1] = ex_mem[1];
+			}
+			
 		}
 		
 		
 		
 		
-		if( id_ex[0] == 3){ //check if the id_ex buffer is empty or not, 0 is empty, 3 is not empty 
-			printf("Exe() data from id_ex buffer and processing instruction #%d\n", id_ex[1]);
+		if(id_ex[0] == 3){ //check if the id_ex buffer is empty or not, 0 is empty, 3 is not empty 
 			
-			id_ex[0] = 0;
-			ex_mem[0] = 4;
+			int is_in_nop_d = 0;
+			if(is_in_nop == true){
+				is_in_nop_d = 1;
+			}
+			printf("!!!!!!!!!!!!nop counter in exe(): %d with is_in_nop as %d\n", id_nop_counter, is_in_nop_d);
 			
-			ex_mem[1] = id_ex[1];
+			//Global for Decode()
+			/*
+			5: int registerfile_rs_index;
+			6: int registerfile_rt_index; 
+			7: int registerfile_rd_index; 
+			
+			8: int global_immediate; 
+
+			//control signals
+			9: int jump = 0; 
+			10: int RegWrite; 
+			11: int MemWrite; 
+			12: int branch = 0; 
+			13: int InstType; 
+			14: int alu_op; 
+			*/
+			
+			/*Debugger
+			printf("___________________\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("___________________\n");
+			*/
+			
+			
+			if(is_in_nop == false){// if not in a nop process
+			
+				if(ex_mem[9] == 0 && ex_mem[12] == 0){//if current ins is not a jump or branch
+				
+					if(ex_mem[13] == 10){ //if ins is R type
+					
+						//check if next ins rs or rt use its rd
+						if(id_ex[5] == ex_mem[7] || id_ex[6] == ex_mem[7]){
+							//if true, then nop ID() and IF() below by setting stage # to 6
+							if_nop_counter = 1;
+							id_nop_counter = 1;
+							is_in_nop = true;
+						}
+						
+					}
+					else if(ex_mem[13] == 0 && ex_mem[11] == 0){ //if ins is lw
+						
+						//check if next ins rs or rt use its rt
+						if(id_ex[5] == ex_mem[6] || id_ex[6] == ex_mem[6]){
+							//if true, then nop ID() and IF() below by setting stage # to 6
+							if_nop_counter = 1;
+							id_nop_counter = 1;
+							is_in_nop = true;
+						}
+					}
+				
+				}
+			}
+			else if(is_in_nop == true){ //real end of nop process
+				id_nop_counter = 0;
+				if_nop_counter = 0;
+				is_in_nop = false;
+				
+				printf("is nooooooooooooooooo nop anymore\n");
+			}
+			
+			/*
+			printf("???????????????\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("???????????????\n");
+			*/
+						
+			if(if_nop_counter == 0 && id_nop_counter == 0 && is_in_nop == false){
+				printf("Exe() data from id_ex buffer and processing instruction #%d\n", id_ex[1]);
+				execute(registerfile);
+				
+				id_ex[0] = 0;
+				
+				ex_mem[0] = 4;
+				ex_mem[1] = id_ex[1];
+			}
+			else if(is_in_nop == true){ // if it need to stall
+				printf("is firrrrrrrrrrrrrrrrrst nop\n");
+				id_ex[0] = 0; //so current ins don't move on 
+			
+				//first nop only run mem() and wb() later
+				ex_mem[0] = 4; //first nop
+				mem_wb[0] = 5; //first nop
+				
+				if_nop_counter = 2; ////start first nop indicate with 1 using "continue;" below
+				id_nop_counter = 2; //first nop
+				total_clock_cycles++;
+				continue; //first nop
+			}
+			/*
+			printf("!!!!!!!!!!!!!!!!!!\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("!!!!!!!!!!!!!!!!!!\n");*/
+			
+			//id_ex[0] = 0;
+			
+			//ex_mem[0] = 4;
+			//mem_wb[0] = 5;
+			//ex_mem[1] = id_ex[1];
+			
+			/*
+			printf("/////////////////\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("////////////////\n");
+			*/
 		}
 		
 		
@@ -1149,7 +1335,7 @@ int main(){
 			printf("Decode() data from if_id buffer and processing instruction #%d\n", if_id[1]);
 			printf("code: %s\n", if_id_ins);
 			
-			//decode(if_id_ins, sign_extended); 
+			decode(if_id_ins, sign_extended); 
 			
 			if_id[0] = 0; //done with transferring data in buffer if_id to id_ex, buffer if_id is now consider empty
 			id_ex[0] = 3; // id_ex is now fill with data
@@ -1157,6 +1343,16 @@ int main(){
 			id_ex[1] = if_id[1]; //pass the ins index to next stage
 			
 		}
+		/*
+		else if(id_nop_counter == 1 || id_nop_counter == 2){
+			printf("nop%d ID()\n", id_nop_counter);
+			id_nop_counter++;
+			
+			if(id_nop_counter == 3){ //Finish 2 nops, so reset id counter back to 0
+				id_nop_counter = 0;
+				//id_ex[0] = 3; //stop stalling stage exe()
+			}
+		}*/
 		
 		
 		
@@ -1176,7 +1372,25 @@ int main(){
 				if_stage == 0; //stop fetching by setting if_stage to 0
 			}
 		}
+		/*
+		else if(if_nop_counter == 1 || if_nop_counter == 2){
+			printf("nop%d IF()\n", if_nop_counter); 
+			if_nop_counter++;
+			
+			if(if_nop_counter == 3){ //Finish 2 nops, so reset if counter back to 0
+				if_nop_counter = 0;
+				//id_ex[0] = 3; //stop stalling stage exe()
+			}
+		}*/
 		
+		/*
+		printf("___________________\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("___________________\n");
+		*/
 		
 		total_clock_cycles++;
 	}
