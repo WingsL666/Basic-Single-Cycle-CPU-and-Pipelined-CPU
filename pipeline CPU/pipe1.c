@@ -3,9 +3,15 @@
 #include<string.h>
 #define FILENAME "sample_binary.txt"
 
+//define boolean type
+typedef enum {
+	false, true
+}
+bool;
+
 //Global for Fetch()
 int pc = 0; 
-int next_pc; 
+int next_pc = 0; 
 
 //Global for Decode()
 int jump_target = 0; 
@@ -50,7 +56,48 @@ int* ex_mem;
 int* mem_wb;
 
 
+//Set flush to true in main()->while(free) pipe-> wb() stage if branch is taken
+bool flush = false;
+
+
 char* fetch(char** ins_memory) {
+	
+	if(ex_mem[12] == 1 && ex_mem[15] == 1 && flush == false){//if branch = 1 and alu_zero = 1, then branch is taken
+		//Get data from mem() to fetch the next pc in case if is a branch
+		//pc = ex_mem[16];//update pc to branch_target
+		//printf("fetch(): pc is updated to %d to branch_target", pc);
+		
+		printf("Assume branch is not Taken, keep fetching next_pc\n");
+		printf("fetch(): pc is updated to %d to next_pc get from if_id\n", pc);
+		pc = if_id[3];
+	}
+	else if(mem_wb[12] == 1 && mem_wb[15] == 1 && flush == true){//if branch = 1 and alu_zero = 1, then branch is taken
+		//flush is done in wb(), now just fetch the new Taken branch
+		printf("Branch is Taken\n");
+		printf("fetch(): pc is updated to %d to branch_target\n", pc);
+		pc = mem_wb[16];
+		
+		//clean up the mem_wb buffer
+		for(int i = 0; i < 25; i++){
+			mem_wb[i] = 0;
+		}
+		
+		//reset flush to false after fetching the branch tar ins
+		flush = false;
+	}
+	else if(id_ex[9] == 1){ //jump signal is 1
+		pc = id_ex[4]; // update pc to jump_target
+		printf("fetch(): pc is updated to %d to jump_target\n", pc);
+	}
+	else if(total_clock_cycles == 1){
+		printf("fetch(): pc is updated to 0\n");
+		pc = 0;
+	}
+	else{
+		pc = if_id[3]; //update pc to next_pc
+		printf("fetch(): pc is updated to %d to next_pc get from if_id\n", pc);
+	}
+	//no else since the first cycle always fetch #0 bc pc is 0 as defult
     
     char* instruction;
     
@@ -58,13 +105,13 @@ char* fetch(char** ins_memory) {
 	printf("pc ins index is %d \n", ins_index);
 	
     instruction = ins_memory[ins_index];
-    
-    //increment pc
-    next_pc = pc + 4;
 	
 	//pc = next_pc;
-	
 	//printf("pc is modified to next_pc: %d \n", pc);
+	
+	//store pc values
+	if_id[2] = pc;
+	if_id[3] = pc + 4;
     
     return instruction;
 }
@@ -409,7 +456,7 @@ void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit
     
     jump_target += merge4;
     
-    pc = jump_target; //update pc to jump_target
+    //pc = jump_target; //update pc to jump_target
 	
 	printf("pc is modified to jump_target: %d \n", pc);
     
@@ -606,6 +653,11 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
 
 void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in decode()
     
+	//Get data from if_id buffer
+	pc = if_id[2];
+	next_pc = if_id[3];
+	
+	
     int opcode = 0;
     int* machineCode = (int*) malloc(32*sizeof(int));
     printf("Machine code ins: %s\n", ins);
@@ -626,16 +678,21 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
     //Otherwise, 1,4-62->I format
     
     if(opcode == 0){
-        call_R_format(machineCode, char_registers);
+        call_R_format(machineCode, char_registers);//also store data to id_ex
     }
     
     else if(opcode == 2 || opcode == 3){
-        call_J_format(machineCode, opcode);
+        call_J_format(machineCode, opcode);//also store data to id_ex
     }
     
     else{
-        call_I_format(machineCode, char_registers, opcode, sign_extended);
+        call_I_format(machineCode, char_registers, opcode, sign_extended);//also store data to id_ex
     }
+	
+	
+	//store data to id_ex
+	id_ex[2] = pc;
+	if_id[3] = pc + 4;
 	
 	
 }
@@ -649,6 +706,8 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
 void execute(int* registerfile){
 	
 	//Get data from id_ex buffer
+	pc = id_ex[2];
+	next_pc = id_ex[3];
 	jump_target = id_ex[4];
 	
 	registerfile_rs_index = id_ex[5];
@@ -665,7 +724,7 @@ void execute(int* registerfile){
 	alu_op = id_ex[14]; 
 	//
 	
-    /*
+    
     int rs_value,rt_value,rd_value;
     
     //Run ALU Operation
@@ -780,15 +839,18 @@ void execute(int* registerfile){
 		
 		//Calculate branch_target address
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
-        //Since pc have already be modified to next_pc in fetch(), no need to do +4 below
-        //branch_target = pc + 4 + branch_target; // add pc + 4 to it
-		//change it to:
-		branch_target = pc + branch_target;
+        
+        //branch_target = pc + 4 + branch_target; // add pc + 4 to it since branch start counting from next line
+		branch_target = pc + 4 + branch_target;
+		printf("Calculate branch_target in exe() and get %d\n\n\n", branch_target);
+		
     }
-	*/
+	
 	
 	
 	//Pass data to ex_mem buffer
+	ex_mem[2] = pc;
+	ex_mem[3] = pc + 4;
 	ex_mem[4] = jump_target;
 	
 	ex_mem[5] = registerfile_rs_index;
@@ -825,6 +887,8 @@ void execute(int* registerfile){
 void mem(int* data_memory, int* registerfile){
 	
 	//Get data from ex_mem buffer
+	pc = ex_mem[2];
+	next_pc = ex_mem[3];
 	jump_target = ex_mem[4];
 	
 	registerfile_rs_index = ex_mem[5];
@@ -847,7 +911,7 @@ void mem(int* data_memory, int* registerfile){
 	d_mem_entry_address = ex_mem[18]; 
 	//
 	
-	/*
+	
 	printArrWithSpace(registerfile,32);
 	printArrWithSpace(data_memory,32);
 	
@@ -881,25 +945,27 @@ void mem(int* data_memory, int* registerfile){
         }
 	}
 	else if(branch == 1 && alu_zero == 1){ //both branch condition satisfy
-		//update pc to branch_target
-		pc = branch_target; 
-					
-		//printf("pc is modified to branch_target: %d \n", pc);
-		//printf("!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
-	}*/
+		printf("mem()!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
+	}
 	
 	
 	//Store data to mem_wb buffer
-	ex_mem[6] = registerfile_rt_index;
-	ex_mem[7] = registerfile_rd_index;
+	mem_wb[2] = pc;
+	mem_wb[3] = pc + 4;
+	mem_wb[6] = registerfile_rt_index;
+	mem_wb[7] = registerfile_rd_index;
 	
-	ex_mem[10] = RegWrite; 
-	ex_mem[13] = InstType; 
+	mem_wb[10] = RegWrite; 
+	mem_wb[12] = branch;
+	mem_wb[13] = InstType; 
 	
-	ex_mem[17] = global_rd_value; 
-	ex_mem[18] = d_mem_entry_address; 
+	mem_wb[15] = alu_zero;
+	mem_wb[16] = branch_target;
 	
-	ex_mem[19] = d_mem_entry_value;
+	mem_wb[17] = global_rd_value; 
+	mem_wb[18] = d_mem_entry_address; 
+	
+	mem_wb[19] = d_mem_entry_value;
 	//
 	
 	
@@ -907,19 +973,25 @@ void mem(int* data_memory, int* registerfile){
 
 void writeBack(int* registerfile){
 	
-	//Get data from ex_mem buffer
-	registerfile_rt_index = ex_mem[6];
-	registerfile_rd_index = ex_mem[7];
+	//Get data from mem_wb buffer
+	pc = mem_wb[2];
+	next_pc = mem_wb[3];
+	registerfile_rt_index = mem_wb[6];
+	registerfile_rd_index = mem_wb[7];
 	
-	RegWrite = ex_mem[10]; 
-	InstType = ex_mem[13]; 
+	RegWrite = mem_wb[10]; 
+	branch = mem_wb[12];
+	InstType = mem_wb[13]; 
 	
-	global_rd_value = ex_mem[17]; 
-	d_mem_entry_address = ex_mem[18]; 
-	d_mem_entry_value = ex_mem[19];
+	alu_zero = mem_wb[15];
+	
+	branch_target = mem_wb[16];
+	global_rd_value = mem_wb[17]; 
+	d_mem_entry_address = mem_wb[18]; 
+	d_mem_entry_value = mem_wb[19];
 	//
     
-    /*
+    
     if(RegWrite == 1){ //write to register is true
         printf("RegWrite == 1\n");
 		
@@ -949,7 +1021,7 @@ void writeBack(int* registerfile){
                 
         }
         
-    }*/
+    }
     
     
 }
@@ -1099,29 +1171,24 @@ int main(){
 	int if_nop_counter = 0;
 	int id_nop_counter = 0;
 	
-	typedef enum {
-	   false, true
-	}
-	bool;
-	
 	bool is_in_nop = false;
 	
 	if_stage = 1; //tell CPU to start fetching the first instruction
 	
 	
 	//the rest of the clock cycles:
-	while(free){
+	while(total_clock_cycles <= 20){
 		printf("\n");
 		printf("Clock Cycle: %d\n", total_clock_cycles);
 		
-		/*
-		printf("~~~~~~~~~~~~~~~~\n");
+		
+		printf("1___________________1\n");
 			printArrWithSpace(if_id, 20);
 			printArrWithSpace(id_ex, 20);
 			printArrWithSpace(ex_mem, 20);
 			printArrWithSpace(mem_wb, 20);
-			printf("~~~~~~~~~~~~~~~~\n");
-		*/
+			printf("1___________________1\n");
+		
 		
 		//Put individual if statements from 5 to 1, so CPU move on with order 4->5, 3->4...1->2
 		if( mem_wb[0] == 5){ //check if the mem_wb buffer is empty or not, 0 is empty, 5 is not empty 
@@ -1130,7 +1197,32 @@ int main(){
 			printf("WB() data from mem_wb buffer and processing instruction #%d\n", mem_wb[1]);
 			writeBack(registerfile);
 			
+			
+			
+			//Flushing if branch is Taken
+			if(mem_wb[12] == 1 && mem_wb[15] == 1){//if branch = 1 and alu_zero = 1, then branch is taken
+				printf("~~~~~~~~~~wb(): branch is Taken to %d. Do flushing\n",pc);
+				//Flush
+				for(int i = 0; i < 25; i++){
+					if_id[i] = 0;
+					id_ex[i] = 0;
+					ex_mem[i] = 0;
+				}
+				mem_wb[0] = 0; // turn off current stage wb() after finish wb
+				ex_mem[0] = 0;  // turn off mem()
+				id_ex[0] = 0; // turn off exe()
+				if_id[0] = 0; // turn off decode()
+				//only left fetch() on to fetch() the taken branch instruction by setting global var flush to true:
+				flush = true;
+			}
+			
+			
+			
+			
 			mem_wb[0] = 0; // turn off current stage
+			
+			//pc = mem_wb[2];//update the new pc value
+			//printf("pc is updated to %d", pc);
 			
 			
 			if(mem_wb[1] == totalNumofIns - 1){ //reach the last intruction's writeback, where totalNumofIns - 1 is the index of the last intruction of inout txt file
@@ -1139,9 +1231,9 @@ int main(){
 			
 
 			if(id_nop_counter == 2 && if_nop_counter == 2 && is_in_nop == true){ //indicate second nop is finish
-				//second nop
-				id_ex[0] = 3;
-				ex_mem[0] = 0;
+				printf("!!!!!!!!!!second nop finish here: \n");
+				id_ex[0] = 3; //turn on exe()
+				ex_mem[0] = 0; //turn off mem()
 				
 				printf("In WB() id_ex[0] is %d\n", id_ex[0]);
 				printf("In WB() if_nop_counter is %d\n", if_nop_counter);
@@ -1157,10 +1249,15 @@ int main(){
 			printf("!!!!!!!!!!!!nop counter in wb(): %d with is_in_nop as %d\n", id_nop_counter, is_in_nop_d);
 			
 			
-			
-			
-			
 		}
+		
+		
+		printf("2___________________2\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("2___________________2\n");
 		
 		
 		
@@ -1176,7 +1273,7 @@ int main(){
 			
 			
 			if(if_nop_counter == 2 && id_nop_counter == 2 && is_in_nop == true){
-				printf("is seccccccccccccccond nop finish\n");
+				printf("first nop finish here and second nop srart here: \n");
 				//second nop only run wb() later
 				ex_mem[0] = 0; // turn off current stage
 				mem_wb[0] = 0;
@@ -1199,7 +1296,12 @@ int main(){
 			
 		}
 		
-		
+		printf("3___________________3\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("3___________________3\n");
 		
 		
 		if(id_ex[0] == 3){ //check if the id_ex buffer is empty or not, 0 is empty, 3 is not empty 
@@ -1292,7 +1394,7 @@ int main(){
 				ex_mem[1] = id_ex[1];
 			}
 			else if(is_in_nop == true){ // if it need to stall
-				printf("is firrrrrrrrrrrrrrrrrst nop\n");
+				printf("!!!!!!!!first nop start here: \n");
 				id_ex[0] = 0; //so current ins don't move on 
 			
 				//first nop only run mem() and wb() later
@@ -1312,11 +1414,6 @@ int main(){
 			printArrWithSpace(mem_wb, 20);
 			printf("!!!!!!!!!!!!!!!!!!\n");*/
 			
-			//id_ex[0] = 0;
-			
-			//ex_mem[0] = 4;
-			//mem_wb[0] = 5;
-			//ex_mem[1] = id_ex[1];
 			
 			/*
 			printf("/////////////////\n");
@@ -1324,9 +1421,16 @@ int main(){
 			printArrWithSpace(id_ex, 20);
 			printArrWithSpace(ex_mem, 20);
 			printArrWithSpace(mem_wb, 20);
-			printf("////////////////\n");
-			*/
+			printf("////////////////\n"); */
+			
 		}
+		
+		printf("4___________________4\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("4___________________4\n");
 		
 		
 		
@@ -1343,54 +1447,39 @@ int main(){
 			id_ex[1] = if_id[1]; //pass the ins index to next stage
 			
 		}
-		/*
-		else if(id_nop_counter == 1 || id_nop_counter == 2){
-			printf("nop%d ID()\n", id_nop_counter);
-			id_nop_counter++;
-			
-			if(id_nop_counter == 3){ //Finish 2 nops, so reset id counter back to 0
-				id_nop_counter = 0;
-				//id_ex[0] = 3; //stop stalling stage exe()
-			}
-		}*/
 		
 		
+		printf("5___________________5\n");
+			printArrWithSpace(if_id, 20);
+			printArrWithSpace(id_ex, 20);
+			printArrWithSpace(ex_mem, 20);
+			printArrWithSpace(mem_wb, 20);
+			printf("5___________________5\n");
 		
 		
 		
 		if(if_stage == 1){
-			if(pc/4 < totalNumofIns){
+			if((pc+4)/4 < totalNumofIns){ //if next_pc/4 is not greater than totalNumofIns
 				if_id_ins = fetch(ins_memory);
 				printf("Fetch() instruction #%d\n", pc/4);
 				if_id[0] = 2; //send current ins to stage 2
 				if_id[1] = pc/4; //pass the ins index to stage 2 also
 				
-				pc = next_pc;
-				printf("pc is modified to next_pc: %d \n", pc);
 			}
 			else{//aka if reach the end of all instruction
 				if_stage == 0; //stop fetching by setting if_stage to 0
 			}
 		}
-		/*
-		else if(if_nop_counter == 1 || if_nop_counter == 2){
-			printf("nop%d IF()\n", if_nop_counter); 
-			if_nop_counter++;
-			
-			if(if_nop_counter == 3){ //Finish 2 nops, so reset if counter back to 0
-				if_nop_counter = 0;
-				//id_ex[0] = 3; //stop stalling stage exe()
-			}
-		}*/
 		
-		/*
-		printf("___________________\n");
+		
+		
+		printf("6___________________6\n");
 			printArrWithSpace(if_id, 20);
 			printArrWithSpace(id_ex, 20);
 			printArrWithSpace(ex_mem, 20);
 			printArrWithSpace(mem_wb, 20);
-			printf("___________________\n");
-		*/
+			printf("6___________________6\n");
+		
 		
 		total_clock_cycles++;
 	}
