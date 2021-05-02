@@ -67,7 +67,7 @@ char* fetch(char** ins_memory) {
 		//printf("fetch(): pc is updated to %d to next_pc get from if_id\n", pc);
 		pc = if_id[3];
 		
-		printf("pc is updated to 0x%x \n", pc+4);
+		printf("pc is updated to 0x%x \n", pc);
 	}
 	else if(mem_wb[12] == 1 && mem_wb[15] == 1 && flush == true){//if branch = 1 and alu_zero = 1, then branch is taken
 		//flush is done in wb(), now just fetch the new Taken branch
@@ -94,10 +94,14 @@ char* fetch(char** ins_memory) {
 		pc = 0;
 		printf("pc is updated to 0x%x \n", pc+4);
 	}
+	else if(total_clock_cycles <= 3){
+		pc = if_id[3]; //update pc to next_pc
+		printf("pc is updated to 0x%x \n", pc+4);
+	}
 	else{
 		//printf("fetch(): pc is updated to %d to next_pc get from if_id\n", pc);
 		pc = if_id[3]; //update pc to next_pc
-		printf("pc is updated to 0x%x\n", pc+4);
+		printf("pc is updated to 0x%x\n", pc);
 	}
 	//no else since the first cycle always fetch #0 bc pc is 0 as defult
     
@@ -838,7 +842,7 @@ void execute(int* registerfile){
         //branch_target = pc + 4 + branch_target; // add pc + 4 to it since branch start counting from next line
 		branch_target = pc + 4 + branch_target;
 		//printf("Calculate branch_target in exe() and get %d\n\n\n", branch_target);
-		printf("\n");
+		//printf("\n");
 
     }
 	
@@ -1200,7 +1204,7 @@ int main(){
 			if(mem_wb[12] == 1 && mem_wb[15] == 1){//if branch = 1 and alu_zero = 1, then branch is taken
 				//printf("~~~~~~~~~~wb(): branch is Taken to %d. Do flushing\n",pc);
 				//Flush
-				printf("control hazard detected (flush 3 instructions)");
+				//printf("control hazard detected (flush 3 instructions)\n");
 				for(int i = 0; i < 25; i++){
 					if_id[i] = 0;
 					id_ex[i] = 0;
@@ -1267,31 +1271,15 @@ int main(){
 				printf("data hazard detected (nop1)\n");
 			}
 			
-			/*
-			if(if_nop_counter == 2 && id_nop_counter == 2 && is_in_nop == true){
-				printf("first nop finish here and second nop srart here: \n");
+			
+			//printf("Mem() data from ex_mem buffer and processing instruction #%d\n", ex_mem[1]);
+			mem(data_memory, registerfile);
 				
-				printf("data hazard detected (nop1)\n");
+			ex_mem[0] = 0;
+			mem_wb[0] = 5;
 				
-				//second nop only run wb() later
-				ex_mem[0] = 0; // turn off current stage
-				mem_wb[0] = 0;
-				//mem_wb[1] = ex_mem[1];//duplicate with code above to show the second nop condition here
-				id_ex[0] == 3;
-				if_nop_counter = 3; //start sencond nop indicate with 2 using "continue;" below
-				id_nop_counter = 3;
-				total_clock_cycles++;
-				continue;
-			}
-			else{ */
-				//printf("Mem() data from ex_mem buffer and processing instruction #%d\n", ex_mem[1]);
-				mem(data_memory, registerfile);
-				
-				ex_mem[0] = 0;
-				mem_wb[0] = 5;
-				
-				mem_wb[1] = ex_mem[1];
-			//}
+			mem_wb[1] = ex_mem[1];
+			
 			
 		}
 		/*
@@ -1350,7 +1338,7 @@ int main(){
 							if_nop_counter = 1;
 							id_nop_counter = 1;
 							is_in_nop = true;
-							printf("data hazard detected\n");
+							//printf("data hazard detected\n");
 						}
 						
 					}
@@ -1362,7 +1350,7 @@ int main(){
 							if_nop_counter = 1;
 							id_nop_counter = 1;
 							is_in_nop = true;
-							printf("data hazard detected\n");						
+							//printf("data hazard detected\n");						
 						}
 					}
 				
@@ -1442,6 +1430,37 @@ int main(){
 			//printf("code: %s\n", if_id_ins);
 			
 			decode(if_id_ins, sign_extended); 
+			
+			
+			
+			
+			//Print statement for detecting flushing
+			if(mem_wb[12] == 1 && mem_wb[15] == 1){//if branch = 1 and alu_zero = 1, then branch is taken
+				printf("control hazard detected (flush 3 instructions)\n");
+			}
+			//Print statement for detect if there are any data hazard: (nop will be apply in id_ex[0] == 3 aka exe() stage)
+			else if(ex_mem[9] == 0 && ex_mem[12] == 0){//if current ins is not a jump or branch
+				
+				if(ex_mem[13] == 10){ //if ins is R type
+					
+					//check if next ins rs or rt use its rd
+					if(id_ex[5] == ex_mem[7] || id_ex[6] == ex_mem[7]){
+						printf("data hazard detected\n");
+					}
+						
+				}
+				else if(ex_mem[13] == 0 && ex_mem[11] == 0){ //if ins is lw
+						
+					//check if next ins rs or rt use its rt
+					if(id_ex[5] == ex_mem[6] || id_ex[6] == ex_mem[6]){
+							
+						printf("data hazard detected\n");						
+					}
+				}
+			}
+			
+			
+			
 			
 			if_id[0] = 0; //done with transferring data in buffer if_id to id_ex, buffer if_id is now consider empty
 			id_ex[0] = 3; // id_ex is now fill with data
