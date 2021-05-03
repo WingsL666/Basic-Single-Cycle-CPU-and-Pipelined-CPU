@@ -1,7 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-// #define FILENAME "sample_binary.txt"
 
 //define boolean type
 typedef enum {
@@ -132,8 +131,6 @@ int twoToPower(int power){//implement a for loop for powering, Use in call_?_for
     return result;
 }
 
-
-
 void printArr(int *a, int size){ //print 2D array
     
     //printf("printArr: ");
@@ -143,7 +140,6 @@ void printArr(int *a, int size){ //print 2D array
     
     printf("\n");
 }
-
 void printArrWithSpace(int *a, int size){ //print 2D array with space between each element
     
     //printf("printArr: ");
@@ -153,11 +149,7 @@ void printArrWithSpace(int *a, int size){ //print 2D array with space between ea
     
     printf("\n");
 }
-
-
-
 //Not zero extension, sign_extension extend sign base on left most bit here
-
 void sign_extension(int sign_bit, int* code, int* sign_extended){ //Use in Decode()
     
     for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
@@ -173,7 +165,6 @@ void sign_extension(int sign_bit, int* code, int* sign_extended){ //Use in Decod
         //printf("Sign extended code:");
         //printArr(sign_extended, 32);
     }
-    
     else{
         
         for(int i = 0;i <= 15; i++){ //imm 16-31 has 16 bits
@@ -184,7 +175,6 @@ void sign_extension(int sign_bit, int* code, int* sign_extended){ //Use in Decod
         //printArr(sign_extended, 32);
     }
 }
-
 int convertNegBinaryToDecimal(int* code){ //Use in Decode()
     
     int immediate = 0, counter_power = 0;
@@ -195,18 +185,14 @@ int convertNegBinaryToDecimal(int* code){ //Use in Decode()
     int* flip_imm = (int*)malloc(16*sizeof(int));
     
     for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
-        
         if(*(code+i) == 1){
-            
             //-16 to start at index 0 in flip_imm
             *(flip_imm + i - 16) = 0;
         }
-        
         else{
             *(flip_imm + i - 16) = 1;
         }
     }
-    
     printf("After Flip 16 bits:");
     printArr(flip_imm, 16);
     counter_power = 0;
@@ -225,10 +211,8 @@ int convertNegBinaryToDecimal(int* code){ //Use in Decode()
     
     return immediate;
 }
-
 //Use in Decode()->call_J_format for jump_target
 //but also can be use in anywhere in program
-
 int* convertDecimalto32bitBinary(int deciaml){
     
     int* arr = (int*) malloc(32*sizeof(int));
@@ -239,13 +223,11 @@ int* convertDecimalto32bitBinary(int deciaml){
         arr[31-i] = n % 2;
         n = n/2;
     }
-    
     printf("Convert the current pc = %d to binary:",pc);
     printArr(arr,32);
     
     return arr;
 }
-
 int getFirst4bitReturnAsDecimal(int* binary32){ //get the first 4 bits in pc and convert it to decimal
     
     int dec = 0, counter_power = 0;
@@ -256,22 +238,16 @@ int getFirst4bitReturnAsDecimal(int* binary32){ //get the first 4 bits in pc and
     
     return dec;
 }
-
 void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine ControlUnit()
-    
     //printf("Instruction Type: R \n");
-    
     int rs = 0,rt = 0,rd = 0, shamt = 0, function = 0;
     int counter_power = 0;
     char *r_operation;
-    
     //move func in front to update to correct operation and print func code at the last
     for(int i = 26;i <= 31; i++){ //func 26-31 has 6 bits
-        
         function = function + (*(code+i)*twoToPower(5-counter_power));//TwoToPower(5-counter_power) gets 2^5...2^0
         counter_power++;
     }
-    
     //set control unit signals
     jump = 0;
     RegDst = 1;
@@ -315,31 +291,25 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
             alu_op = 111;
             break;
     }
-    
     //printf("Operation: %s \n",r_operation);
     counter_power = 0;
-    
     for(int i = 6;i <= 10; i++){ //rs 6-10 has 5 bits
         
         rs = rs + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Rs: %s",char_registers[rs]);
     //printf("Rs: %s", reg_arr[rs]);
     //printf("(R%d",rs);
     //printf(")\n");
-    
     //record the rs index to global
     registerfile_rs_index = rs;
     counter_power = 0;
     
     for(int i = 11;i <= 15; i++){ //rt 11-15 has 5 bits
-        
         rt = rt + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Rt: %s",reg_arr[rt]);
     //printf("(R%d",rt);
     //printf(")\n");
@@ -347,13 +317,10 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
     //record the rt index to global
     registerfile_rt_index = rt;
     counter_power = 0;
-    
     for(int i = 16;i <= 20; i++){ //rd 16-20 has 5 bits
-        
         rd = rd + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Rd: %s",reg_arr[rd]);
     //printf("(R%d",rd);
     //printf(")\n");
@@ -367,13 +334,10 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
         shamt = shamt + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Shamt: %d \n",shamt);
     //record the shmat to global
     //global_shamt = shamt;
     //printf("Funct: %d \n",function);
-    
-    
     
     //Store data to id_ex buffer to be use in stage 3(aka exe stage)
     id_ex[5] = registerfile_rs_index;
@@ -390,80 +354,38 @@ void call_R_format(int* code, char** reg_arr){ //Use in Decode(),combine Control
     //printf("id_ex in call_R_format:");
     //printArrWithSpace(id_ex, 20);
 }
-
-
-
 void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit()
     
     //printf("Instruction Type: J \n");
-
     int target_address = 0;
-    
     int counter_power = 0;
-    
     char* j_operation;
-
     switch(opcode)
-        
     {
-            
         case 2:
-            
             j_operation = "j";
-            
             jump = 1;
-            
             RegWrite = 0;
-            
             MemRead = 0;
-            
             MemWrite = 0;
-            
             branch = 0;
-            
             break;
-            
     }
-    
-    
-    
     //printf("Operation: %s \n",j_operation);
-    
     for(int i = 6;i <= 31; i++){ //target 6-31 has 26 bits
-        
         target_address = target_address + (*(code+i)*twoToPower(25-counter_power));//TwoToPower(25-counter_power) gets 2^25...2^0
-        
         counter_power++;
     }
-    
     //printf("Jump address: %d \n",target_address);
-    
-    
-    
-    
-    
     //First shift-left-2 and then merge first 4 bits from pc to get target_address
-    
     jump_target = target_address*4;
-    
-    
-    
     int* pc_binary = (int*) malloc(32*sizeof(int));
-    
     pc_binary = convertDecimalto32bitBinary(pc);
-    
-    
-    
     int merge4 = getFirst4bitReturnAsDecimal(pc_binary);
-    
     //printf("merge4:%d\n",merge4);
-    
     jump_target += merge4;
-        
-    
     //Global for Decode() variables dictionary that will be store in buffer
     id_ex[4] = jump_target;
-    
     id_ex[9] = jump;
     id_ex[10] = RegWrite;
     id_ex[11] = MemWrite;
@@ -472,18 +394,11 @@ void call_J_format(int* code, int opcode){ //Use in Decode(),combine ControlUnit
     //printf("id_ex in call_J_format:");
     //printArrWithSpace(id_ex, 20);
 }
-
-
-
-
-
 void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ //Use in Decode(), combine ControlUnit()
-    
     //printf("Instruction Type: I \n");
     int rs = 0, rt = 0, immediate = 0;
     int counter_power = 0;
     char* i_operation;
-    
     switch(opcode)
     {
         case 4:   // beq
@@ -529,47 +444,33 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
     }
     //printf("Operation: %s \n",i_operation);
     for(int i = 6;i <= 10; i++){ //rs 6-10 has 5 bits
-        
         rs = rs + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Rs: %s", reg_arr[rs]);
     //printf("(R%d)\n",rs);
     
     //record the rs index to global
     registerfile_rs_index = rs;
-    
     counter_power = 0;
-    
     for(int i = 11;i <= 15; i++){ //rt 11-15 has 5 bits
-        
         rt = rt + (*(code+i)*twoToPower(4-counter_power));//TwoToPower(4-counter_power) gets 2^4...2^0
         counter_power++;
     }
-    
     //printf("Rt: %s", reg_arr[rt]);
     //printf("(R%d)\n",rt);
-    
     //record the rt index to global
     registerfile_rt_index = rt;
-    
     //assume if immediate offet is positive
     counter_power = 0;
-    
     for(int i = 16;i <= 31; i++){ //imm 16-31 has 16 bits
-        
         immediate = immediate + (*(code+i)*twoToPower(15-counter_power));//TwoToPower(15-counter_power) gets 2^15...2^0
         counter_power++;
     }
-    
     //strcmp(...,...) == 0 means the two string are the same
     if(strcmp(i_operation,"lw") == 0 || strcmp(i_operation,"sw") == 0){
-        
         //printf("leftmost bit: %d\n", *(code+16));
-        
         //16 is the leftmost bit of the immediate
-        
         if(*(code+16) == 1){
             //printf("Negative offset\n");
             sign_extension(*(code+16),code, sign_extended);//only lw and sw need sign-extension
@@ -577,36 +478,28 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
             immediate = convertNegBinaryToDecimal(code);
             //printf("Immediate: %d\n",immediate);
         }
-        
         else{
             //printf("Positive offset\n");
             sign_extension(*(code+16),code, sign_extended);
             //printf("Immediate: %d\n",immediate);
         }
     }
-    
     else{ // i_operation is beq
-        
         if(*(code+16) == 1){
             //printf("Negative offset\n");
             //convertNegBinaryToDecimal using 2's complement
             immediate = convertNegBinaryToDecimal(code);
             //printf("Immediate: %d\n",immediate);
         }
-        
         else{
             //printf("Positive offset\n");
             //printf("Immediate: %d\n",immediate);
         }
     }
-    
     //record immediate to global
     global_immediate = immediate;
-    
     //printf("call_I_format(): global_immediate : %d\n", global_immediate);
-    
-    
-    
+
     //Global for Decode() variables dictionary that will be store in buffer
     /*
     4: int jump_target = 0;
@@ -625,7 +518,6 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
     14: int alu_op;
     */
     
-    
     id_ex[5] = registerfile_rs_index;
     id_ex[6] = registerfile_rt_index;
     
@@ -642,19 +534,11 @@ void call_I_format(int* code, char** reg_arr, int opcode, int* sign_extended){ /
     //printArrWithSpace(id_ex, 20);
 }
 
-
-
-
-
-
-
-
 void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in decode()
     
     //Get data from if_id buffer
     pc = if_id[2];
     next_pc = if_id[3];
-    
     
     int opcode = 0;
     int* machineCode = (int*) malloc(32*sizeof(int));
@@ -686,21 +570,11 @@ void decode(char* ins, int* sign_extended){ //ControlUnit() is integrediate in d
     else{
         call_I_format(machineCode, char_registers, opcode, sign_extended);//also store data to id_ex
     }
-    
-    
     //store data to id_ex
     id_ex[2] = pc;
     if_id[3] = pc + 4;
     
-    
 }
-
-
-
-
-
-
-
 void execute(int* registerfile){
     
     //Get data from id_ex buffer
@@ -721,77 +595,47 @@ void execute(int* registerfile){
     InstType = id_ex[13];
     alu_op = id_ex[14];
     //
-    
-    
     int rs_value,rt_value,rd_value;
     
     //Run ALU Operation
     
     if(InstType == 10){ //R type
-        
         rs_value = registerfile[registerfile_rs_index];
-        
         rt_value = registerfile[registerfile_rt_index];
-
         switch(alu_op)
         {
             case 10:   // Add
-                
                 rd_value = rs_value + rt_value;
-                
                 break;
-
+                
             case 110:  // Sub
-                
                 rd_value = rs_value - rt_value;
-                
                 break;
-
             case 0:  // and
-                
                 rd_value = rs_value & rt_value; //binary AND operator
-                
                 break;
  
             case 1: // or
-                
                 rd_value = rs_value | rt_value; //binary OR operator
-                
                 break;
 
             case 1100: // nor
-                
                 rd_value = ~(rs_value | rt_value);
-                
                 break;
 
             case 111:  // slt
-                
                 rd_value = rs_value - rt_value;
-                
                 if(rd_value < 0){
-                    
                     rd_value = 1; //aka means slt is true
-                    
                 }
-                
                 else{
-                    
                     rd_value = 0; //aka means slt is false
-                    
                 }
-                
                 break;
         }
-        
-        
-        
         global_rd_value = rd_value; //store this to global for write back later
-        
         //printf("exe():global_rd_value for R type: %d\n", global_rd_value);
-        
     }
-    
     else if(InstType == 0){ // lw or sw
         rs_value = registerfile[registerfile_rs_index];
         
@@ -805,48 +649,30 @@ void execute(int* registerfile){
                 break;
         }
     }
-    
     else if(branch == 1){ // beq
         rs_value = registerfile[registerfile_rs_index];
         rt_value = registerfile[registerfile_rt_index];
           
         switch(alu_op)
-            
         {
-                
             case 110:  // Sub
                 //printf("Enter 110 with rs = %d and rt = %d\n", rs_value, rt_value);
-                
                 rd_value = rs_value - rt_value;
-                
                 if(rd_value == 0){
-                    
                     alu_zero = 1; // means rd is equal to zero is true aka rs and rt are equal
-          
                 }
-                
                 else{
-                    
                     alu_zero = 0; // means rd is equal to zero is false aka rs and rt are not equal
-                    
                 }
-                
                 break;
-                
         }
-        
         //Calculate branch_target address
         branch_target = 4 * global_immediate; //to shift-left-2 of the sign-extended offset input
-        
         //branch_target = pc + 4 + branch_target; // add pc + 4 to it since branch start counting from next line
         branch_target = pc + 4 + branch_target;
         //printf("Calculate branch_target in exe() and get %d\n\n\n", branch_target);
         //printf("\n");
-
     }
-    
-    
-    
     //Pass data to ex_mem buffer
     ex_mem[2] = pc;
     ex_mem[3] = pc + 4;
@@ -874,15 +700,6 @@ void execute(int* registerfile){
     
     
 }
-
-
-
-
-
-
-
-
-
 void mem(int* data_memory, int* registerfile){
     
     //Get data from ex_mem buffer
@@ -909,46 +726,32 @@ void mem(int* data_memory, int* registerfile){
     global_rd_value = ex_mem[17];
     d_mem_entry_address = ex_mem[18];
     //
-    
-    
     //printArrWithSpace(registerfile,32);
     //printArrWithSpace(data_memory,32);
     
     if(InstType == 0){
         //printf("check InstType == 0\n");
         switch(MemWrite)
-            
         {
-                
             case 0:  // lw
                 //printf("check MemWrite case 0, d_mem_entry_address: %d \n", d_mem_entry_address);
-                
                 //divide by 4 to get the real index in data_memory
                 d_mem_entry_value = data_memory[d_mem_entry_address/4]; //load the memory to global var
-                
                 //printf("prepare load value:%d \n", d_mem_entry_value);
                 
                 break;
                 
-                
-                
             case 1:  // sw
                 //printf("check MemWrite case 1\n");
-                
                 data_memory[d_mem_entry_address] = registerfile[registerfile_rt_index]; //store value in rt to data memory
-                
                 printf("memory 0x%x is modified to 0x%x by sw\n", d_mem_entry_address, data_memory[d_mem_entry_address]);
-                
                 break;
-                
         }
     }
     /*
     else if(branch == 1 && alu_zero == 1){ //both branch condition satisfy
         //printf("mem()!!!!!alu_zero is: %d and branch is %d\n", alu_zero, branch);
     }*/
-    
-    
     //Store data to mem_wb buffer
     mem_wb[2] = pc;
     mem_wb[3] = pc + 4;
@@ -967,10 +770,7 @@ void mem(int* data_memory, int* registerfile){
     
     mem_wb[19] = d_mem_entry_value;
     //
-    
-    
 }
-
 void writeBack(int* registerfile){
     
     //Get data from mem_wb buffer
@@ -990,42 +790,24 @@ void writeBack(int* registerfile){
     d_mem_entry_address = mem_wb[18];
     d_mem_entry_value = mem_wb[19];
     //
-    
-    
     if(RegWrite == 1){ //write to register is true
         //printf("RegWrite == 1\n");
-        
         switch(InstType)
-            
         {
-                
             case 10:   // R type
                 //printf("writeBack() R type: registerfile_rd_index: %d, global_rd_value: %d\n",registerfile_rd_index, global_rd_value);
-                
                 registerfile[registerfile_rd_index] = global_rd_value; // write back to rd
-                
                 printf("$%s is modified to 0x%x \n", char_registers[registerfile_rd_index], registerfile[registerfile_rd_index]);
-                
                 break;
-                
-                
-                
+            
             case 0: // lw
                 //printf("writeBack() lw: registerfile_rd_index: %d, d_mem_entry_value: %d\n",registerfile_rt_index, d_mem_entry_value);
-                
                 registerfile[registerfile_rt_index] = d_mem_entry_value;
-                
                 printf("$%s is modified to 0x%x \n", char_registers[registerfile_rt_index], registerfile[registerfile_rt_index]);
-                
                 break;
-                
         }
-        
     }
-    
-    
 }
-
 int main(){
     
     int ins_index = 0;
@@ -1036,7 +818,6 @@ int main(){
         
         printf("Enter filename:\n");
         scanf("%s", FILENAME);
-    
     
     int stage = 0;
     
@@ -1060,17 +841,11 @@ int main(){
     //array to store sign-extended offet
     sign_extended = (int*) malloc(32*sizeof(int));
     
-    
-    
-    
     //assign spaces to pipeline registers(buffers)
     if_id = (int*) malloc(25*sizeof(int));
     id_ex = (int*) malloc(25*sizeof(int));
     ex_mem = (int*) malloc(25*sizeof(int));
     mem_wb = (int*) malloc(25*sizeof(int));
-    
-    
-    
     
     //Note!!!!!!!!process below is very sensitive about number of \n within the txt file
     //get the total number of instruction to create instruction cache array:
@@ -1099,7 +874,7 @@ int main(){
     }
     
     //print number of lines
-    printf("Total number of lines are: %d\n",totalNumofIns);
+  //  printf("Total number of lines are: %d\n",totalNumofIns);
     
     //create instruction cache array:
     char** ins_memory= (char**)malloc(totalNumofIns*sizeof(char*)); // allocating size for ins_memory
@@ -1119,13 +894,9 @@ int main(){
             ins_index++;
         }
     }
-    
     if(f != NULL){
         fclose(f); // close file
     }
-    
-    
-    
     //Initialize registerfile and d_mem with given sample_binary
     
     registerfile[9] = 32;
@@ -1174,7 +945,6 @@ int main(){
     
     if_stage = 1; //tell CPU to start fetching the first instruction
     
-    
     //the rest of the clock cycles:
     while(free){
         printf("\n");
@@ -1195,8 +965,6 @@ int main(){
             
             //printf("WB() data from mem_wb buffer and processing instruction #%d\n", mem_wb[1]);
             writeBack(registerfile);
-            
-            
             
             //Flushing if branch is Taken
             if(mem_wb[12] == 1 && mem_wb[15] == 1){//if branch = 1 and alu_zero = 1, then branch is taken
@@ -1223,7 +991,6 @@ int main(){
                 break;
             }
             
-
             if(id_nop_counter == 2 && if_nop_counter == 2 && is_in_nop == true){ //indicate second nop is finish
                 //printf("!!!!!!!!!!second nop finish here: \n");
                 printf("data hazard detected (nop2)\n");
@@ -1234,18 +1001,13 @@ int main(){
                 //printf("In WB() if_nop_counter is %d\n", if_nop_counter);
                 total_clock_cycles++;
                 continue;
-                
             }
-            
             int is_in_nop_d = 0;
             if(is_in_nop == true){
                 is_in_nop_d = 1;
             }
             //printf("!!!!!!!!!!!!nop counter in wb(): %d with is_in_nop as %d\n", id_nop_counter, is_in_nop_d);
-            
-            
         }
-        
         /*
         printf("2___________________2\n");
             printArrWithSpace(if_id, 20);
@@ -1254,7 +1016,6 @@ int main(){
             printArrWithSpace(mem_wb, 20);
             printf("2___________________2\n");
         */
-        
         
         if( ex_mem[0] == 4){ //check if the ex_mem buffer is empty or not, 0 is empty, 4 is not empty
             //printf("!!!!!!!!!!!!nop counter in mem(): %d\n", id_nop_counter);
@@ -1268,8 +1029,6 @@ int main(){
             if(is_in_nop == true){
                 printf("data hazard detected (nop1)\n");
             }
-            
-            
             //printf("Mem() data from ex_mem buffer and processing instruction #%d\n", ex_mem[1]);
             mem(data_memory, registerfile);
                 
@@ -1277,8 +1036,6 @@ int main(){
             mem_wb[0] = 5;
                 
             mem_wb[1] = ex_mem[1];
-            
-            
         }
         /*
         printf("3___________________3\n");
@@ -1321,8 +1078,6 @@ int main(){
             printArrWithSpace(mem_wb, 20);
             printf("___________________\n");
             */
-            
-            
             if(is_in_nop == false){// if not in a nop process
             
                 if(ex_mem[9] == 0 && ex_mem[12] == 0){//if current ins is not a jump or branch
@@ -1428,9 +1183,6 @@ int main(){
             
             decode(if_id_ins, sign_extended);
             
-            
-            
-            
             //Print statement for detecting flushing
             if(mem_wb[12] == 1 && mem_wb[15] == 1){//if branch = 1 and alu_zero = 1, then branch is taken
                 printf("control hazard detected (flush 3 instructions)\n");
@@ -1455,17 +1207,11 @@ int main(){
                     }
                 }
             }
-            
-            
-            
-            
             if_id[0] = 0; //done with transferring data in buffer if_id to id_ex, buffer if_id is now consider empty
             id_ex[0] = 3; // id_ex is now fill with data
             
             id_ex[1] = if_id[1]; //pass the ins index to next stage
-            
         }
-        
         /*
         printf("5___________________5\n");
             printArrWithSpace(if_id, 20);
@@ -1474,8 +1220,6 @@ int main(){
             printArrWithSpace(mem_wb, 20);
             printf("5___________________5\n");
         */
-        
-        
         if(if_stage == 1){
             if((pc+4)/4 < totalNumofIns){ //if next_pc/4 is not greater than totalNumofIns
                 if_id_ins = fetch(ins_memory);
@@ -1488,8 +1232,6 @@ int main(){
                 if_stage == 0; //stop fetching by setting if_stage to 0
             }
         }
-        
-        
         /*
         printf("6___________________6\n");
             printArrWithSpace(if_id, 20);
@@ -1503,12 +1245,7 @@ int main(){
             total_clock_cycles++;
         }
     }
-    
-    
-    
     printf("program terminated: \n");
     printf("total execution time is %d cycles \n", total_clock_cycles);
-    
     return 0;
-    
 }
